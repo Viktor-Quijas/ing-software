@@ -40,5 +40,3 @@ Database:
 
 NOTA:
     Esta madre jala en mi máquina. Necesitamos checar cualquier cosa que falle en las suyas (con Claudio claro que si).
-
-victorfrontend
