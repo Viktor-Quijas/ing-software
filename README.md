@@ -40,3 +40,7 @@ Database:
 
 NOTA:
     Esta madre jala en mi máquina. Necesitamos checar cualquier cosa que falle en las suyas (con Claudio claro que si).
+
+# Link de la documentación:
+
+                https://drive.google.com/drive/folders/1Wu5WhHGzN1U3JtwmJHtAizrhqHG58shb?usp=drive_link
