@@ -26,6 +26,8 @@ function MisAvances() {
     </div>
   );
 }
+import { MisAvances } from './pages/MisAvances';
+import { ExplorarLecciones } from './pages/ExplorarLecciones';
 
 export default function App() {
 
@@ -52,10 +54,11 @@ const isAuthenticated = false;
         >
           <Route index element={<MisAvances />} />
           <Route path="avances" element={<MisAvances />} />
+          <Route path="lecciones" element={<ExplorarLecciones />} /> 
         </Route>
 
         <Route path="*" element={<Navigate to={isAuthenticated ? '/' : '/login'} replace/>} />
       </Routes>
     </BrowserRouter>
-  )
+  );
 }
