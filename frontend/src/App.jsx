@@ -1,5 +1,15 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
+import { AuthLayout } from './layouts/AuthLayout';
+import { Login } from './pages/Login';
+import { Register } from './pages/Register';
+
+function ProtectedRoute({ isAuthenticated, children }) {
+  if (!isAuthenticated){
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+}
 
 function MisAvances() {
   return (
@@ -18,13 +28,33 @@ function MisAvances() {
 }
 
 export default function App() {
+
+  //Variable traída desde el backend? no se.
+const isAuthenticated = false;
+
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<MainLayout />}>
+        {/* Ruta pública, login*/}
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+        </Route>
+
+        {/*Ruta privada, pagina principal*/}
+        <Route 
+          path="/" 
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <MainLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<MisAvances />} />
           <Route path="avances" element={<MisAvances />} />
         </Route>
+
+        <Route path="*" element={<Navigate to={isAuthenticated ? '/' : '/login'} replace/>} />
       </Routes>
     </BrowserRouter>
   )
