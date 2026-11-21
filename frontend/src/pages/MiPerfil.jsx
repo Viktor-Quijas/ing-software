@@ -412,7 +412,7 @@ function GeneralTab({ profile, setField, photo, setPhoto, onCancel, onSave, save
                   return (
                     <label
                       key={g.value}
-                      className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition-colors focus-within:ring-2 focus-within:ring-purple-300 ${
+                      className={`relative flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-purple-300 ${
                         selected
                           ? 'border-purple-700 bg-purple-50'
                           : 'border-gray-200 bg-white hover:border-purple-300'

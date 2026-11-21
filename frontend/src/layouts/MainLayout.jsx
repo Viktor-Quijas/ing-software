@@ -8,7 +8,7 @@ export function MainLayout() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="flex h-screen bg-codea-gray-100 overflow-hidden font-sans">
+    <div className= "flex fixed inset-0 flex bg-codea-gray-100 overflow-hidden font-sans-screen bg-codea-gray-100 overflow-hidden font-sans">
       {/* 1. Sidebar (Barra Lateral Izquierda) */}
       <aside className="w-64 bg-codea-primary-100 flex flex-col justify-between p-6 border-r border-purple-100/50">
         <div>

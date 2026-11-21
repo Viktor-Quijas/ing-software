@@ -299,6 +299,24 @@ function LessonCard({ lesson }) {
   );
 }
 
+// Cuántas lecciones se muestran en "Recomendados"
+const RECOMMENDED_COUNT = 3;
+
+function LessonSection({ title, items }) {
+  if (items.length === 0) return null;
+
+  return (
+    <section aria-label={title} className="space-y-4">
+      <h2 className="text-lg text-gray-800">{title}</h2>
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        {items.map((lesson) => (
+          <LessonCard key={lesson.id} lesson={lesson} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* Vista principal                                                     */
 /* ------------------------------------------------------------------ */
@@ -311,14 +329,17 @@ export function ExplorarLecciones() {
 
       <LastLessonBanner data={lastLesson} />
 
-      <section
-        aria-label="Lecciones disponibles"
-        className="grid gap-5 md:grid-cols-2 xl:grid-cols-3"
-      >
-        {lessons.map((lesson) => (
-          <LessonCard key={lesson.id} lesson={lesson} />
-        ))}
-      </section>
+      {/* Las primeras 3 lecciones van como recomendadas */}
+      <LessonSection
+        title="Recomendados"
+        items={lessons.slice(0, RECOMMENDED_COUNT)}
+      />
+
+      {/* El resto de los cursos */}
+      <LessonSection
+        title="Todos los cursos"
+        items={lessons.slice(RECOMMENDED_COUNT)}
+      />
 
       <p className="flex items-center justify-center gap-2 pt-2 text-xs text-gray-500">
         <span className="text-[#5B45D6]">
