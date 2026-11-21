@@ -6,6 +6,8 @@ import { Register } from './pages/Register';
 import { MisAvances } from './pages/MisAvances';
 import { ExplorarLecciones } from './pages/ExplorarLecciones';
 import { MiPerfil } from './pages/MiPerfil';
+import { LessonLayout } from './layouts/LessonLayout';
+import { LessonPage } from './pages/LessonPage';
 
 function ProtectedRoute({ isAuthenticated, children }) {
   if (!isAuthenticated) {
@@ -40,6 +42,17 @@ export default function App() {
           <Route path="avances" element={<MisAvances />} />
           <Route path="lecciones" element={<ExplorarLecciones />} />
           <Route path="perfil" element={<MiPerfil />} />
+        </Route>
+
+        <Route
+          path="lecciones/:lessonId"
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <LessonLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<LessonPage />} />
         </Route>
 
         <Route

@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 /* ------------------------------------------------------------------ */
 /* Datos de ejemplo (luego los reemplazas con tu API / estado global)  */
 /* ------------------------------------------------------------------ */
@@ -178,12 +180,12 @@ function LastLessonBanner({ data }) {
           {data.progressNote}
         </p>
         <div className="flex flex-col items-center gap-3">
-          <button
-            type="button"
+          <Link
+            to={`/lecciones/${data.lessonId ?? 1}`}
             className="inline-flex items-center gap-2 rounded-lg bg-[#9B10D8] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#AA25E6] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#38004F]"
           >
             Continuar <Icon name="arrow" size={16} />
-          </button>
+          </Link>
           <span className="text-[11px] text-purple-200">{data.progress}</span>
         </div>
       </div>
@@ -191,8 +193,9 @@ function LastLessonBanner({ data }) {
   );
 }
 
-function CardFooter({ status, tone }) {
+function CardFooter({ lessonId, status, tone }) {
   const t = tones[tone];
+  const linkClass = `inline-flex items-center gap-1 text-sm font-semibold ${t.text} hover:underline`;
 
   if (status.type === 'progress') {
     const pct = Math.round((status.done / status.total) * 100);
@@ -209,12 +212,9 @@ function CardFooter({ status, tone }) {
             {status.done} de {status.total}
           </span>
         </div>
-        <button
-          type="button"
-          className={`inline-flex items-center gap-1 text-sm font-semibold ${t.text} hover:underline`}
-        >
+        <Link to={`/lecciones/${lessonId}`} className={linkClass}>
           Continuar <Icon name="arrow" />
-        </button>
+        </Link>
       </>
     );
   }
@@ -225,12 +225,9 @@ function CardFooter({ status, tone }) {
         <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2.5 py-1.5 text-xs font-medium text-emerald-700">
           <Icon name="check" size={12} /> Completado
         </span>
-        <button
-          type="button"
-          className="inline-flex items-center gap-1 text-sm font-semibold text-[#4C5FD5] hover:underline"
-        >
+        <Link to={`/lecciones/${lessonId}`} className={linkClass}>
           Repasar <Icon name="arrow" />
-        </button>
+        </Link>
       </>
     );
   }
@@ -238,12 +235,9 @@ function CardFooter({ status, tone }) {
   return (
     <>
       <span className="text-xs text-emerald-700">Acceso gratuito</span>
-      <button
-        type="button"
-        className="inline-flex items-center gap-1 text-sm font-semibold text-[#4C5FD5] hover:underline"
-      >
+      <Link to={`/lecciones/${lessonId}`} className={linkClass}>
         Empezar <Icon name="arrow" />
-      </button>
+      </Link>
     </>
   );
 }
@@ -298,7 +292,7 @@ function LessonCard({ lesson }) {
         </div>
 
         <div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-3">
-          <CardFooter status={lesson.status} tone={lesson.tone} />
+          <CardFooter lessonId={lesson.id} status={lesson.status} tone={lesson.tone} />
         </div>
       </div>
     </article>
