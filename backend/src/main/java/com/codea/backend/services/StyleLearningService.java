@@ -1,52 +1,60 @@
 package com.codea.backend.services;
 
-import java.util.List;
-
-import org.springframework.http.HttpStatus;
+import com.codea.backend.dtos.*;
+import com.codea.backend.entitys.*;
+import com.codea.backend.exceptions.*;
+import com.codea.backend.mappers.*;
+import com.codea.backend.repositorys.*;
+import com.codea.backend.utils.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.codea.backend.dtos.StyleLearningDTO;
-import com.codea.backend.entitys.StyleLearning;
-import com.codea.backend.mappers.StyleLearningMapper;
-import com.codea.backend.repositorys.StyleLearningRepository;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class StyleLearningService {
 
-    private final StyleLearningRepository styleRepository;
-    private final StyleLearningMapper styleMapper;
+    private final StyleLearningRepository repository;
+    private final StyleLearningMapper mapper;
 
-    public StyleLearningService(StyleLearningRepository styleRepository, StyleLearningMapper styleMapper) {
-        this.styleRepository = styleRepository;
-        this.styleMapper = styleMapper;
+    @Transactional(readOnly = true)
+    public List<StyleLearningDto> findAll() {
+        return repository.findAll().stream().map(mapper::toDto).toList();
     }
 
-    public List<StyleLearningDTO> findAll() {
-        return styleRepository.findAll().stream().map(styleMapper::toDTO).toList();
+    @Transactional(readOnly = true)
+    public StyleLearningDto findById(Long id) {
+        return mapper.toDto(getEntity(id));
     }
 
-    public StyleLearningDTO findById(Long id) {
-        return styleMapper.toDTO(getStyle(id));
+    public StyleLearningDto create(StyleLearningDto dto) {
+        StyleLearning entity = mapper.toEntity(dto);
+        entity.setIdStyle(null);
+        return mapper.toDto(repository.saveAndFlush(entity));
     }
 
-    public StyleLearningDTO create(StyleLearningDTO dto) {
-        return styleMapper.toDTO(styleRepository.save(styleMapper.toEntity(dto)));
-    }
-
-    public StyleLearningDTO update(Long id, StyleLearningDTO dto) {
-        StyleLearning style = getStyle(id);
-        styleMapper.updateEntity(dto, style);
-        return styleMapper.toDTO(styleRepository.save(style));
+    public StyleLearningDto update(Long id, StyleLearningDto dto) {
+        StyleLearning entity = getEntity(id);
+        mapper.updateEntity(entity, dto);
+        return mapper.toDto(repository.saveAndFlush(entity));
     }
 
     public void delete(Long id) {
-        getStyle(id);
-        styleRepository.deleteById(id);
+        if (!repository.existsById(id)) {
+            throw new ResourceNotFoundException("StyleLearning no encontrado: " + id);
+        }
+        repository.deleteById(id);
+        repository.flush();
     }
 
-    private StyleLearning getStyle(Long id) {
-        return styleRepository.findById(id).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "Estilo no encontrado con id " + id));
+    @Transactional(readOnly = true)
+    public StyleLearning getEntity(Long id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("StyleLearning no encontrado: " + id));
     }
 }

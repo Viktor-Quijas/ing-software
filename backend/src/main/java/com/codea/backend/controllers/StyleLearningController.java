@@ -1,47 +1,45 @@
 package com.codea.backend.controllers;
 
-import java.util.List;
-
+import com.codea.backend.dtos.*;
+import com.codea.backend.services.StyleLearningService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.codea.backend.dtos.StyleLearningDTO;
-import com.codea.backend.services.StyleLearningService;
+import java.util.List;
 
 @RestController
-@RequestMapping("/api/styles")
+@RequestMapping("/api/style-learnings")
+@RequiredArgsConstructor
 public class StyleLearningController {
 
-    private final StyleLearningService styleService;
-
-    public StyleLearningController(StyleLearningService styleService) {
-        this.styleService = styleService;
-    }
+    private final StyleLearningService service;
 
     @GetMapping
-    public List<StyleLearningDTO> findAll() {
-        return styleService.findAll();
+    public ResponseEntity<List<StyleLearningDto>> findAll() {
+        return ResponseEntity.ok(service.findAll());
     }
 
     @GetMapping("/{id}")
-    public StyleLearningDTO findById(@PathVariable Long id) {
-        return styleService.findById(id);
+    public ResponseEntity<StyleLearningDto> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(service.findById(id));
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public StyleLearningDTO create(@RequestBody StyleLearningDTO dto) {
-        return styleService.create(dto);
+    public ResponseEntity<StyleLearningDto> create(@Valid @RequestBody StyleLearningDto dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(dto));
     }
 
     @PutMapping("/{id}")
-    public StyleLearningDTO update(@PathVariable Long id, @RequestBody StyleLearningDTO dto) {
-        return styleService.update(id, dto);
+    public ResponseEntity<StyleLearningDto> update(@PathVariable Long id, @Valid @RequestBody StyleLearningDto dto) {
+        return ResponseEntity.ok(service.update(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
-        styleService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

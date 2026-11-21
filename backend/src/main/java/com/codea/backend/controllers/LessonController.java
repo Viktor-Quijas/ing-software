@@ -1,47 +1,45 @@
 package com.codea.backend.controllers;
 
-import java.util.List;
-
+import com.codea.backend.dtos.*;
+import com.codea.backend.services.LessonService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.codea.backend.dtos.LessonDTO;
-import com.codea.backend.services.LessonService;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/lessons")
+@RequiredArgsConstructor
 public class LessonController {
 
-    private final LessonService lessonService;
-
-    public LessonController(LessonService lessonService) {
-        this.lessonService = lessonService;
-    }
+    private final LessonService service;
 
     @GetMapping
-    public List<LessonDTO> findAll() {
-        return lessonService.findAll();
+    public ResponseEntity<List<LessonDto>> findAll() {
+        return ResponseEntity.ok(service.findAll());
     }
 
     @GetMapping("/{id}")
-    public LessonDTO findById(@PathVariable Long id) {
-        return lessonService.findById(id);
+    public ResponseEntity<LessonDto> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(service.findById(id));
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public LessonDTO create(@RequestBody LessonDTO dto) {
-        return lessonService.create(dto);
+    public ResponseEntity<LessonDto> create(@Valid @RequestBody LessonDto dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(dto));
     }
 
     @PutMapping("/{id}")
-    public LessonDTO update(@PathVariable Long id, @RequestBody LessonDTO dto) {
-        return lessonService.update(id, dto);
+    public ResponseEntity<LessonDto> update(@PathVariable Long id, @Valid @RequestBody LessonDto dto) {
+        return ResponseEntity.ok(service.update(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
-        lessonService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

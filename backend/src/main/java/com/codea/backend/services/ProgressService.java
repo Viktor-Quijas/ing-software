@@ -1,66 +1,70 @@
 package com.codea.backend.services;
 
-import java.util.List;
-
-import org.springframework.http.HttpStatus;
+import com.codea.backend.dtos.*;
+import com.codea.backend.entitys.*;
+import com.codea.backend.exceptions.*;
+import com.codea.backend.mappers.*;
+import com.codea.backend.repositorys.*;
+import com.codea.backend.utils.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.codea.backend.dtos.ProgressDTO;
-import com.codea.backend.entitys.Activity;
-import com.codea.backend.entitys.Progress;
-import com.codea.backend.entitys.User;
-import com.codea.backend.mappers.ProgressMapper;
-import com.codea.backend.repositorys.ActivityRepository;
-import com.codea.backend.repositorys.ProgressRepository;
-import com.codea.backend.repositorys.UserRepository;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class ProgressService {
 
-    private final ProgressRepository progressRepository;
-    private final UserRepository userRepository;
-    private final ActivityRepository activityRepository;
-    private final ProgressMapper progressMapper;
+    private final ProgressRepository repository;
+    private final ProgressMapper mapper;
 
-    public ProgressService(ProgressRepository progressRepository, UserRepository userRepository, ActivityRepository activityRepository, ProgressMapper progressMapper) {
-        this.progressRepository = progressRepository;
-        this.userRepository = userRepository;
-        this.activityRepository = activityRepository;
-        this.progressMapper = progressMapper;
+    @Transactional(readOnly = true)
+    public List<ProgressDto> findAll() {
+        return repository.findAll().stream().map(mapper::toDto).toList();
     }
 
-    public List<ProgressDTO> findByUser(Long idUser) {
-        return progressRepository.findByUser_IdUser(idUser).stream().map(progressMapper::toDTO).toList();
+    @Transactional(readOnly = true)
+    public ProgressDto findById(Long id) {
+        return mapper.toDto(getEntity(id));
     }
 
-    public ProgressDTO findById(Long id) {
-        return progressMapper.toDTO(getProgress(id));
+    @Transactional(readOnly = true)
+    public List<ProgressDto> findByUser(Long id) {
+        return repository.findByUser_IdUser(id).stream().map(mapper::toDto).toList();
     }
 
-    public ProgressDTO create(Long idUser, Long idActivity, ProgressDTO dto) {
-        User user = userRepository.findById(idUser).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado con id " + idUser));
-        Activity activity = activityRepository.findById(idActivity).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "Actividad no encontrada con id " + idActivity));
-        Progress progress = progressMapper.toEntity(dto, user, activity);
-        return progressMapper.toDTO(progressRepository.save(progress));
+    @Transactional(readOnly = true)
+    public List<ProgressDto> findByActivity(Long id) {
+        return repository.findByActivity_IdActivity(id).stream().map(mapper::toDto).toList();
     }
 
-    public ProgressDTO update(Long id, ProgressDTO dto) {
-        Progress progress = getProgress(id);
-        // conserva el usuario y la actividad originales
-        progressMapper.updateEntity(dto, progress, progress.getUser(), progress.getActivity());
-        return progressMapper.toDTO(progressRepository.save(progress));
+    public ProgressDto create(ProgressDto dto) {
+        Progress entity = mapper.toEntity(dto);
+        entity.setIdProgress(null);
+        return mapper.toDto(repository.saveAndFlush(entity));
+    }
+
+    public ProgressDto update(Long id, ProgressDto dto) {
+        Progress entity = getEntity(id);
+        mapper.updateEntity(entity, dto);
+        return mapper.toDto(repository.saveAndFlush(entity));
     }
 
     public void delete(Long id) {
-        getProgress(id);
-        progressRepository.deleteById(id);
+        if (!repository.existsById(id)) {
+            throw new ResourceNotFoundException("Progress no encontrado: " + id);
+        }
+        repository.deleteById(id);
+        repository.flush();
     }
 
-    private Progress getProgress(Long id) {
-        return progressRepository.findById(id).orElseThrow(() ->
-                new ResponseStatusException(HttpStatus.NOT_FOUND, "Progreso no encontrado con id " + id));
+    @Transactional(readOnly = true)
+    public Progress getEntity(Long id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Progress no encontrado: " + id));
     }
 }

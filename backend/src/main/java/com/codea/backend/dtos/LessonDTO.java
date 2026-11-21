@@ -1,12 +1,26 @@
 package com.codea.backend.dtos;
 
-public record LessonDTO (
-    Long idLesson,
-    String titleLesson,
-    String authorLesson,
-    String contentLesson,
-    Integer lengthLesson,
-    String difficultyLesson
-){
-    
+import jakarta.validation.constraints.*;
+import lombok.*;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class LessonDto {
+
+    private Long idLesson;
+
+    @NotBlank
+    private String titleLesson;
+
+    private String authorLesson;
+
+    private String contentLesson;
+
+    private Integer lengthLesson;
+
+    private String difficultyLesson;
+
+    private String statusLesson;
 }

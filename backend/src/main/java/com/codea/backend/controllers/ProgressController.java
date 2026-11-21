@@ -1,47 +1,55 @@
 package com.codea.backend.controllers;
 
-import java.util.List;
-
+import com.codea.backend.dtos.*;
+import com.codea.backend.services.ProgressService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.codea.backend.dtos.ProgressDTO;
-import com.codea.backend.services.ProgressService;
+import java.util.List;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/progress")
+@RequiredArgsConstructor
 public class ProgressController {
 
-    private final ProgressService progressService;
+    private final ProgressService service;
 
-    public ProgressController(ProgressService progressService) {
-        this.progressService = progressService;
+    @GetMapping
+    public ResponseEntity<List<ProgressDto>> findAll() {
+        return ResponseEntity.ok(service.findAll());
     }
 
-    @GetMapping("/users/{idUser}/progress")
-    public List<ProgressDTO> findByUser(@PathVariable Long idUser) {
-        return progressService.findByUser(idUser);
+    @GetMapping("/{id}")
+    public ResponseEntity<ProgressDto> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(service.findById(id));
     }
 
-    @PostMapping("/users/{idUser}/activities/{idActivity}/progress")
-    @ResponseStatus(HttpStatus.CREATED)
-    public ProgressDTO create(@PathVariable Long idUser, @PathVariable Long idActivity, @RequestBody ProgressDTO dto) {
-        return progressService.create(idUser, idActivity, dto);
+    @GetMapping("/by-user/{id}")
+    public ResponseEntity<List<ProgressDto>> findByUser(@PathVariable Long id) {
+        return ResponseEntity.ok(service.findByUser(id));
     }
 
-    @GetMapping("/progress/{id}")
-    public ProgressDTO findById(@PathVariable Long id) {
-        return progressService.findById(id);
+    @GetMapping("/by-activity/{id}")
+    public ResponseEntity<List<ProgressDto>> findByActivity(@PathVariable Long id) {
+        return ResponseEntity.ok(service.findByActivity(id));
     }
 
-    @PutMapping("/progress/{id}")
-    public ProgressDTO update(@PathVariable Long id, @RequestBody ProgressDTO dto) {
-        return progressService.update(id, dto);
+    @PostMapping
+    public ResponseEntity<ProgressDto> create(@Valid @RequestBody ProgressDto dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(dto));
     }
 
-    @DeleteMapping("/progress/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
-        progressService.delete(id);
+    @PutMapping("/{id}")
+    public ResponseEntity<ProgressDto> update(@PathVariable Long id, @Valid @RequestBody ProgressDto dto) {
+        return ResponseEntity.ok(service.update(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

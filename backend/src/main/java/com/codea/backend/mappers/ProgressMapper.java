@@ -1,36 +1,52 @@
 package com.codea.backend.mappers;
 
+import com.codea.backend.dtos.ProgressDto;
+import com.codea.backend.entitys.*;
 import org.springframework.stereotype.Component;
-
-import com.codea.backend.dtos.ProgressDTO;
-import com.codea.backend.entitys.Activity;
-import com.codea.backend.entitys.Progress;
-import com.codea.backend.entitys.User;
 
 @Component
 public class ProgressMapper {
 
-    public ProgressDTO toDTO(Progress progress) {
-        return new ProgressDTO(
-                progress.getIdProgress(),
-                progress.getStatusProgress(),
-                progress.getGradeProgress(),
-                progress.getTriesProgress(),
-                progress.getDateProgress());
+    public ProgressDto toDto(Progress e) {
+        if (e == null) return null;
+        return ProgressDto.builder()
+                .idProgress(e.getIdProgress())
+                .statusProgress(e.getStatusProgress())
+                .gradeProgress(e.getGradeProgress())
+                .triesProgress(e.getTriesProgress())
+                .dateProgress(e.getDateProgress())
+                .idUser(e.getUser() == null ? null : e.getUser().getIdUser())
+                .idActivity(e.getActivity() == null ? null : e.getActivity().getIdActivity())
+                .build();
     }
 
-    public Progress toEntity(ProgressDTO dto, User user, Activity activity) {
-        Progress progress = new Progress();
-        updateEntity(dto, progress, user, activity);
-        return progress;
+    public Progress toEntity(ProgressDto d) {
+        if (d == null) return null;
+        Progress e = new Progress();
+        e.setIdProgress(d.getIdProgress());
+        updateEntity(e, d);
+        return e;
     }
 
-    public void updateEntity(ProgressDTO dto, Progress progress, User user, Activity activity) {
-        progress.setUser(user);
-        progress.setActivity(activity);
-        progress.setStatusProgress(dto.statusProgress());
-        progress.setGradeProgress(dto.gradeProgress());
-        progress.setTriesProgress(dto.triesProgress());
-        progress.setDateProgress(dto.dateProgress());
+    /** Copia los campos del DTO (sin tocar el id). Las llaves foráneas se enlazan por id. */
+    public void updateEntity(Progress e, ProgressDto d) {
+        e.setStatusProgress(d.getStatusProgress());
+        e.setGradeProgress(d.getGradeProgress());
+        e.setTriesProgress(d.getTriesProgress());
+        e.setDateProgress(d.getDateProgress());
+        e.setUser(d.getIdUser() == null ? null : refUser(d.getIdUser()));
+        e.setActivity(d.getIdActivity() == null ? null : refActivity(d.getIdActivity()));
+    }
+
+    private User refUser(Long id) {
+        User t = new User();
+        t.setIdUser(id);
+        return t;
+    }
+
+    private Activity refActivity(Long id) {
+        Activity t = new Activity();
+        t.setIdActivity(id);
+        return t;
     }
 }

@@ -1,41 +1,48 @@
 package com.codea.backend.mappers;
 
+import com.codea.backend.dtos.ActivityDto;
+import com.codea.backend.entitys.*;
 import org.springframework.stereotype.Component;
-
-import com.codea.backend.dtos.ActivityDTO;
-import com.codea.backend.entitys.Activity;
-import com.codea.backend.entitys.Lesson;
 
 @Component
 public class ActivityMapper {
 
-    public ActivityDTO toDTO(Activity activity) {
-        return new ActivityDTO(
-                activity.getIdActivity(),
-                activity.getLesson() != null ? activity.getLesson().getIdLesson() : null,
-                activity.getTitleActivity(),
-                activity.getDescriptionActivity(),
-                activity.getTypeActivity(),
-                activity.getInstructionActivity(),
-                activity.getContentActivity(),
-                activity.getDifficultyActivity(),
-                activity.getLengthActivity());
+    public ActivityDto toDto(Activity e) {
+        if (e == null) return null;
+        return ActivityDto.builder()
+                .idActivity(e.getIdActivity())
+                .titleActivity(e.getTitleActivity())
+                .descriptionActivity(e.getDescriptionActivity())
+                .typeActivity(e.getTypeActivity())
+                .instructionActivity(e.getInstructionActivity())
+                .lengthActivity(e.getLengthActivity())
+                .passingScore(e.getPassingScore())
+                .idLesson(e.getLesson() == null ? null : e.getLesson().getIdLesson())
+                .build();
     }
 
-    public Activity toEntity(ActivityDTO dto, Lesson lesson) {
-        Activity activity = new Activity();
-        updateEntity(dto, activity, lesson);
-        return activity;
+    public Activity toEntity(ActivityDto d) {
+        if (d == null) return null;
+        Activity e = new Activity();
+        e.setIdActivity(d.getIdActivity());
+        updateEntity(e, d);
+        return e;
     }
 
-    public void updateEntity(ActivityDTO dto, Activity activity, Lesson lesson) {
-        activity.setLesson(lesson);
-        activity.setTitleActivity(dto.titleActivity());
-        activity.setDescriptionActivity(dto.descriptionActivity());
-        activity.setTypeActivity(dto.typeActivity());
-        activity.setInstructionActivity(dto.instructionActivity());
-        activity.setContentActivity(dto.contentActivity());
-        activity.setDifficultyActivity(dto.difficultyActivity());
-        activity.setLengthActivity(dto.lengthActivity());
+    /** Copia los campos del DTO (sin tocar el id). Las llaves foráneas se enlazan por id. */
+    public void updateEntity(Activity e, ActivityDto d) {
+        e.setTitleActivity(d.getTitleActivity());
+        e.setDescriptionActivity(d.getDescriptionActivity());
+        e.setTypeActivity(d.getTypeActivity());
+        e.setInstructionActivity(d.getInstructionActivity());
+        e.setLengthActivity(d.getLengthActivity());
+        e.setPassingScore(d.getPassingScore());
+        e.setLesson(d.getIdLesson() == null ? null : refLesson(d.getIdLesson()));
+    }
+
+    private Lesson refLesson(Long id) {
+        Lesson t = new Lesson();
+        t.setIdLesson(id);
+        return t;
     }
 }

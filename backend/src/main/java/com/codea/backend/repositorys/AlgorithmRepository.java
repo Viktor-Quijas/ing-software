@@ -1,12 +1,14 @@
 package com.codea.backend.repositorys;
 
+import com.codea.backend.entitys.Algorithm;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-
-import com.codea.backend.entitys.Algorithm;
-
+@Repository
 public interface AlgorithmRepository extends JpaRepository<Algorithm, Long> {
 
-    Optional<Algorithm> findByNameAlgorithm(String nameAlgorithm);
+    Optional<Algorithm> findFirstByOrderByIdAlgorithmAsc();
 }

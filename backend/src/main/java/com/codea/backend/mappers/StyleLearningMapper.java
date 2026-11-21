@@ -1,28 +1,32 @@
 package com.codea.backend.mappers;
 
+import com.codea.backend.dtos.StyleLearningDto;
+import com.codea.backend.entitys.*;
 import org.springframework.stereotype.Component;
-
-import com.codea.backend.dtos.StyleLearningDTO;
-import com.codea.backend.entitys.StyleLearning;
 
 @Component
 public class StyleLearningMapper {
 
-    public StyleLearningDTO toDTO(StyleLearning style) {
-        return new StyleLearningDTO(
-                style.getIdStyle(),
-                style.getNameStyle(),
-                style.getDescriptionStyle());
+    public StyleLearningDto toDto(StyleLearning e) {
+        if (e == null) return null;
+        return StyleLearningDto.builder()
+                .idStyle(e.getIdStyle())
+                .nameStyle(e.getNameStyle())
+                .descriptionStyle(e.getDescriptionStyle())
+                .build();
     }
 
-    public StyleLearning toEntity(StyleLearningDTO dto) {
-        StyleLearning style = new StyleLearning();
-        updateEntity(dto, style);
-        return style;
+    public StyleLearning toEntity(StyleLearningDto d) {
+        if (d == null) return null;
+        StyleLearning e = new StyleLearning();
+        e.setIdStyle(d.getIdStyle());
+        updateEntity(e, d);
+        return e;
     }
 
-    public void updateEntity(StyleLearningDTO dto, StyleLearning style) {
-        style.setNameStyle(dto.nameStyle());
-        style.setDescriptionStyle(dto.descriptionStyle());
+    /** Copia los campos del DTO (sin tocar el id). Las llaves foráneas se enlazan por id. */
+    public void updateEntity(StyleLearning e, StyleLearningDto d) {
+        e.setNameStyle(d.getNameStyle());
+        e.setDescriptionStyle(d.getDescriptionStyle());
     }
 }

@@ -1,47 +1,47 @@
 package com.codea.backend.controllers;
 
-import java.util.List;
-
+import com.codea.backend.dtos.UserRequestDto;
+import com.codea.backend.dtos.UserResponseDto;
+import com.codea.backend.services.UserService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.codea.backend.dtos.UserDTO;
-import com.codea.backend.services.UserService;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
+@RequiredArgsConstructor
 public class UserController {
 
-    private final UserService userService;
-
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
+    private final UserService service;
 
     @GetMapping
-    public List<UserDTO> findAll() {
-        return userService.findAll();
+    public ResponseEntity<List<UserResponseDto>> findAll() {
+        return ResponseEntity.ok(service.findAll());
     }
 
     @GetMapping("/{id}")
-    public UserDTO findById(@PathVariable Long id) {
-        return userService.findById(id);
+    public ResponseEntity<UserResponseDto> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(service.findById(id));
     }
 
+    /** Registro de usuario (público). */
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public UserDTO create(@RequestBody UserDTO dto) {
-        return userService.create(dto);
+    public ResponseEntity<UserResponseDto> create(@Valid @RequestBody UserRequestDto dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(dto));
     }
 
     @PutMapping("/{id}")
-    public UserDTO update(@PathVariable Long id, @RequestBody UserDTO dto) {
-        return userService.update(id, dto);
+    public ResponseEntity<UserResponseDto> update(@PathVariable Long id, @Valid @RequestBody UserRequestDto dto) {
+        return ResponseEntity.ok(service.update(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
-        userService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

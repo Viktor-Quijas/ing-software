@@ -1,18 +1,29 @@
 package com.codea.backend.dtos;
 
-public record ActivityDTO (
+import jakarta.validation.constraints.*;
+import lombok.*;
 
-    Long idActivity,
-    Long idLesson,
-    String titleActivity,
-    String descriptionActivity,
-    String typeActivity,
-    String instructionActivity,
-    String contentActivity,
-    String difficultyActivity,
-    Integer lengthActivity ){
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class ActivityDto {
 
-    }
+    private Long idActivity;
 
-    
+    @NotBlank
+    private String titleActivity;
 
+    private String descriptionActivity;
+
+    private String typeActivity;
+
+    private String instructionActivity;
+
+    private Integer lengthActivity;
+
+    private Double passingScore;
+
+    @NotNull
+    private Long idLesson;
+}

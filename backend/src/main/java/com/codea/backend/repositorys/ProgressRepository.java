@@ -1,15 +1,18 @@
 package com.codea.backend.repositorys;
 
+import com.codea.backend.entitys.Progress;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-
-import com.codea.backend.entitys.Progress;
-
+@Repository
 public interface ProgressRepository extends JpaRepository<Progress, Long> {
 
     List<Progress> findByUser_IdUser(Long idUser);
+
+    List<Progress> findByActivity_IdActivity(Long idActivity);
 
     Optional<Progress> findByUser_IdUserAndActivity_IdActivity(Long idUser, Long idActivity);
 }

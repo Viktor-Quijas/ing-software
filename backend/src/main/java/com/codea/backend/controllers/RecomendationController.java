@@ -1,47 +1,65 @@
 package com.codea.backend.controllers;
 
-import java.util.List;
-
+import com.codea.backend.dtos.*;
+import com.codea.backend.services.RecomendationService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.codea.backend.dtos.RecomendationDTO;
-import com.codea.backend.services.RecomendationService;
+import java.util.List;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/recomendations")
+@RequiredArgsConstructor
 public class RecomendationController {
 
-    private final RecomendationService recomendationService;
+    private final RecomendationService service;
 
-    public RecomendationController(RecomendationService recomendationService) {
-        this.recomendationService = recomendationService;
+    @GetMapping
+    public ResponseEntity<List<RecomendationDto>> findAll() {
+        return ResponseEntity.ok(service.findAll());
     }
 
-    @GetMapping("/users/{idUser}/recomendations")
-    public List<RecomendationDTO> findByUser(@PathVariable Long idUser) {
-        return recomendationService.findByUser(idUser);
+    @GetMapping("/{id}")
+    public ResponseEntity<RecomendationDto> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(service.findById(id));
     }
 
-    @PostMapping("/recomendations")
-    @ResponseStatus(HttpStatus.CREATED)
-    public RecomendationDTO create(@RequestBody RecomendationDTO dto, @RequestParam(required = false) Long idAlgorithm, @RequestParam(required = false) Long idLesson, @RequestParam(required = false) Long idActivity) {
-        return recomendationService.create(dto, idAlgorithm, idLesson, idActivity);
+    @GetMapping("/by-user/{id}")
+    public ResponseEntity<List<RecomendationDto>> findByUser(@PathVariable Long id) {
+        return ResponseEntity.ok(service.findByUser(id));
     }
 
-    @GetMapping("/recomendations/{id}")
-    public RecomendationDTO findById(@PathVariable Long id) {
-        return recomendationService.findById(id);
+    @GetMapping("/by-algorithm/{id}")
+    public ResponseEntity<List<RecomendationDto>> findByAlgorithm(@PathVariable Long id) {
+        return ResponseEntity.ok(service.findByAlgorithm(id));
     }
 
-    @PutMapping("/recomendations/{id}")
-    public RecomendationDTO update(@PathVariable Long id, @RequestBody RecomendationDTO dto) {
-        return recomendationService.update(id, dto);
+    @GetMapping("/by-lesson/{id}")
+    public ResponseEntity<List<RecomendationDto>> findByLesson(@PathVariable Long id) {
+        return ResponseEntity.ok(service.findByLesson(id));
     }
 
-    @DeleteMapping("/recomendations/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
-        recomendationService.delete(id);
+    @GetMapping("/by-activity/{id}")
+    public ResponseEntity<List<RecomendationDto>> findByActivity(@PathVariable Long id) {
+        return ResponseEntity.ok(service.findByActivity(id));
+    }
+
+    @PostMapping
+    public ResponseEntity<RecomendationDto> create(@Valid @RequestBody RecomendationDto dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(dto));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<RecomendationDto> update(@PathVariable Long id, @Valid @RequestBody RecomendationDto dto) {
+        return ResponseEntity.ok(service.update(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

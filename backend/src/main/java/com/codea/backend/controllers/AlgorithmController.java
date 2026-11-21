@@ -1,47 +1,45 @@
 package com.codea.backend.controllers;
 
-import java.util.List;
-
+import com.codea.backend.dtos.*;
+import com.codea.backend.services.AlgorithmService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.codea.backend.dtos.AlgorithmDTO;
-import com.codea.backend.services.AlgorithmService;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/algorithms")
+@RequiredArgsConstructor
 public class AlgorithmController {
 
-    private final AlgorithmService algorithmService;
-
-    public AlgorithmController(AlgorithmService algorithmService) {
-        this.algorithmService = algorithmService;
-    }
+    private final AlgorithmService service;
 
     @GetMapping
-    public List<AlgorithmDTO> findAll() {
-        return algorithmService.findAll();
+    public ResponseEntity<List<AlgorithmDto>> findAll() {
+        return ResponseEntity.ok(service.findAll());
     }
 
     @GetMapping("/{id}")
-    public AlgorithmDTO findById(@PathVariable Long id) {
-        return algorithmService.findById(id);
+    public ResponseEntity<AlgorithmDto> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(service.findById(id));
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public AlgorithmDTO create(@RequestBody AlgorithmDTO dto) {
-        return algorithmService.create(dto);
+    public ResponseEntity<AlgorithmDto> create(@Valid @RequestBody AlgorithmDto dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(dto));
     }
 
     @PutMapping("/{id}")
-    public AlgorithmDTO update(@PathVariable Long id, @RequestBody AlgorithmDTO dto) {
-        return algorithmService.update(id, dto);
+    public ResponseEntity<AlgorithmDto> update(@PathVariable Long id, @Valid @RequestBody AlgorithmDto dto) {
+        return ResponseEntity.ok(service.update(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
-        algorithmService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }
