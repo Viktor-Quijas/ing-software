@@ -3,15 +3,48 @@ import { Link, useNavigate } from 'react-router-dom';
 import { CodeaLogo } from '../components/CodeaLogo';
 import { LoginIllustrations } from '../components/LoginIllustrations';
 
-export function Login() {
+export function Login({ onLogin }) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Aquí conectarás con tu API / AuthContext
-    console.log('Iniciando sesión con:', formData);
-    navigate('/avances');
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          emailUser: formData.email,
+          passwordUser: formData.password,
+        })
+      });
+
+      if (response.status === 401) {
+        throw new Error('Correo o contraseña incorrectos.');
+      }
+
+      if(!response.ok){
+        throw new Error('Ocurrió un error. Por favor, inténtalo de nuevo más tarde. (Server)');
+      }
+
+      const data = await response.json();
+      if (!data.token){
+        throw new Error('La respuesta del servidor no contiene un token.');
+      }
+
+      sessionStorage.setItem('token', data.token);
+      onLogin();
+      navigate('/avances');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se puedo iniciar sesión.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -47,6 +80,8 @@ export function Login() {
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             className="w-full px-4 py-2.5 bg-[#F4F0FB] border border-[#8B5CF6]/50 rounded-lg text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7C3AED] transition"
           />
+
+          {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 
           <button
             type="submit"
