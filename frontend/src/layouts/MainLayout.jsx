@@ -1,5 +1,8 @@
-import { Outlet, Link, useLocation, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import logoCodea from '../assets/logotipo-codea.svg';
+import { logoutRequest } from '../utils/auth';
+import { apiRequest } from '../utils/api';
 
 const ROUTE_LABELS = {
   '/': 'Mis avances',
@@ -10,11 +13,64 @@ const ROUTE_LABELS = {
 
 export function MainLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [lessonTitle, setLessonTitle] = useState('');
+  const [userName, setUserName] = useState('');
+  const [userError, setUserError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadUserName() {
+      const userId = Number(sessionStorage.getItem('userId'));
+      if (!Number.isSafeInteger(userId) || userId <= 0) {
+        setUserError('No se pudo identificar la sesión del usuario.');
+        return;
+      }
+
+      try {
+        const user = await apiRequest(`/api/users/${userId}`);
+        const fullName = [user?.nameUser, user?.lastnameUser]
+          .filter((part) => typeof part === 'string' && part.trim())
+          .join(' ')
+          .trim();
+
+        if (!fullName) {
+          throw new Error('El servidor no devolvió el nombre del usuario.');
+        }
+        if (active) setUserName(fullName);
+      } catch (err) {
+        if (active) {
+          setUserError(
+            err instanceof Error ? err.message : 'No se pudo cargar el nombre del usuario.'
+          );
+        }
+      }
+    }
+
+    loadUserName();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Función auxiliar para detectar el enlace activo
-  const currentSection = ROUTE_LABELS[location.pathname] || 'Mis avances';
+  const lessonRoute = location.pathname.match(/^\/lecciones\/([^/]+)\/(?:tema|ejercicio)$/);
+  const currentSection = lessonRoute
+    ? lessonTitle || `Lección ${lessonRoute[1]}`
+    : ROUTE_LABELS[location.pathname] || 'Mis avances';
+  const displayedUserName = userName || (userError ? 'No disponible' : 'Cargando...');
+  const userInitials = userName
+    ? userName.split(/\s+/).slice(0, 2).map((part) => part[0].toUpperCase()).join('')
+    : 'U';
 
   const isActive = (path) => location.pathname === path;
+
+  // Cerrar sesión: borra los datos guardados y redirige al login
+  const handleLogout = async () => {
+  await logoutRequest(); 
+  navigate('/login', { replace: true });
+};
 
   return (
     <div className= "flex fixed inset-0 flex bg-codea-gray-100 overflow-hidden font-sans-screen bg-codea-gray-100 overflow-hidden font-sans">
@@ -76,7 +132,10 @@ export function MainLayout() {
 
         {/* Footer Sidebar */}
         <div className="space-y-4 px-2">
-          <button className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-500 font-medium transition-colors">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-500 font-medium transition-colors"
+          >
             <span className="border border-gray-400 rounded-full w-4 h-4 flex items-center justify-center text-[10px]">✕</span>
             Cerrar Sesión
           </button>
@@ -100,20 +159,25 @@ export function MainLayout() {
           </nav>
 
           {/* Menú Usuario */}
-          <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
-            <div className="w-8 h-8 rounded-full bg-[#A855F7] text-white flex items-center justify-center text-xs font-bold">
-              Us
-            </div>
-            <button className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-purple-700">
-              Usuario
-              <span className="text-xs text-gray-400">∨</span>
-            </button>
+          <div className="border-l border-gray-200 pl-4">
+            <Link
+              to="/perfil"
+              title={userError || `Ver perfil de ${displayedUserName}`}
+              aria-label={`Abrir mi perfil${userError ? `: ${userError}` : ''}`}
+              className="flex items-center gap-3 text-sm font-medium text-gray-700 hover:text-purple-700"
+            >
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#A855F7] text-xs font-bold text-white">
+                {userInitials}
+              </span>
+              <span>{displayedUserName}</span>
+              <span className="text-xs text-gray-400" aria-hidden="true">∨</span>
+            </Link>
           </div>
         </header>
 
         {/* 3. Outlet (Vista Dinámica) */}
         <main className="flex-1 overflow-y-auto p-8 bg-gray-50/30">
-          <Outlet />
+          <Outlet context={{ setLessonTitle, setUserName }} />
         </main>
       </div>
     </div>

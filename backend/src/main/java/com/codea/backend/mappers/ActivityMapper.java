@@ -1,15 +1,15 @@
 package com.codea.backend.mappers;
 
-import com.codea.backend.dtos.ActivityDto;
+import com.codea.backend.dtos.ActivityDTO;
 import com.codea.backend.entitys.*;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ActivityMapper {
 
-    public ActivityDto toDto(Activity e) {
+    public ActivityDTO toDto(Activity e) {
         if (e == null) return null;
-        return ActivityDto.builder()
+        return ActivityDTO.builder()
                 .idActivity(e.getIdActivity())
                 .titleActivity(e.getTitleActivity())
                 .descriptionActivity(e.getDescriptionActivity())
@@ -21,7 +21,7 @@ public class ActivityMapper {
                 .build();
     }
 
-    public Activity toEntity(ActivityDto d) {
+    public Activity toEntity(ActivityDTO d) {
         if (d == null) return null;
         Activity e = new Activity();
         e.setIdActivity(d.getIdActivity());
@@ -30,7 +30,7 @@ public class ActivityMapper {
     }
 
     /** Copia los campos del DTO (sin tocar el id). Las llaves foráneas se enlazan por id. */
-    public void updateEntity(Activity e, ActivityDto d) {
+    public void updateEntity(Activity e, ActivityDTO d) {
         e.setTitleActivity(d.getTitleActivity());
         e.setDescriptionActivity(d.getDescriptionActivity());
         e.setTypeActivity(d.getTypeActivity());

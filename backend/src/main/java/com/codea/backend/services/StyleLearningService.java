@@ -23,22 +23,22 @@ public class StyleLearningService {
     private final StyleLearningMapper mapper;
 
     @Transactional(readOnly = true)
-    public List<StyleLearningDto> findAll() {
+    public List<StyleLearningDTO> findAll() {
         return repository.findAll().stream().map(mapper::toDto).toList();
     }
 
     @Transactional(readOnly = true)
-    public StyleLearningDto findById(Long id) {
+    public StyleLearningDTO findById(Long id) {
         return mapper.toDto(getEntity(id));
     }
 
-    public StyleLearningDto create(StyleLearningDto dto) {
+    public StyleLearningDTO create(StyleLearningDTO dto) {
         StyleLearning entity = mapper.toEntity(dto);
         entity.setIdStyle(null);
         return mapper.toDto(repository.saveAndFlush(entity));
     }
 
-    public StyleLearningDto update(Long id, StyleLearningDto dto) {
+    public StyleLearningDTO update(Long id, StyleLearningDTO dto) {
         StyleLearning entity = getEntity(id);
         mapper.updateEntity(entity, dto);
         return mapper.toDto(repository.saveAndFlush(entity));

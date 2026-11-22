@@ -18,22 +18,22 @@ public class ActivityController {
     private final ActivityService service;
 
     @GetMapping
-    public ResponseEntity<List<ActivityDto>> findAll() {
+    public ResponseEntity<List<ActivityDTO>> findAll() {
         return ResponseEntity.ok(service.findAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ActivityDto> findById(@PathVariable Long id) {
+    public ResponseEntity<ActivityDTO> findById(@PathVariable Long id) {
         return ResponseEntity.ok(service.findById(id));
     }
 
     @PostMapping
-    public ResponseEntity<ActivityDto> create(@Valid @RequestBody ActivityDto dto) {
+    public ResponseEntity<ActivityDTO> create(@Valid @RequestBody ActivityDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(dto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ActivityDto> update(@PathVariable Long id, @Valid @RequestBody ActivityDto dto) {
+    public ResponseEntity<ActivityDTO> update(@PathVariable Long id, @Valid @RequestBody ActivityDTO dto) {
         return ResponseEntity.ok(service.update(id, dto));
     }
 
@@ -44,7 +44,7 @@ public class ActivityController {
     }
 
     @GetMapping("/by-lesson/{idLesson}")
-    public ResponseEntity<ActivityDto> findByLesson(@PathVariable Long idLesson) {
+    public ResponseEntity<ActivityDTO> findByLesson(@PathVariable Long idLesson) {
         return ResponseEntity.ok(service.findByLesson(idLesson));
     }
 

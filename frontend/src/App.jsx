@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
 import { AuthLayout } from './layouts/AuthLayout';
 import { Login } from './pages/Login';
@@ -8,26 +8,41 @@ import { ExplorarLecciones } from './pages/ExplorarLecciones';
 import { LeccionTema, LeccionEjercicio } from './pages/Leccion';
 import { MiPerfil } from './pages/MiPerfil';
 import { ExamenDiagnostico } from './pages/ExamenDiagnostico';
-import { useState } from 'react';
+import { hasHandledDiagnostic } from './utils/diagnostic';
+import { isTokenValid, clearSession } from './utils/auth';
 
-function ProtectedRoute({ isAuthenticated, children }) {
-  if (!isAuthenticated) {
+function ProtectedRoute({ children }) {
+  useLocation(); 
+  if (!isTokenValid()) {
+    clearSession();
     return <Navigate to="/login" replace />;
   }
   return children;
 }
 
-export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    () => Boolean(sessionStorage.getItem('token') && sessionStorage.getItem('userId'))
-  );
+function RequireDiagnostic({ children }) {
+  if (!hasHandledDiagnostic()) {
+    return <Navigate to="/diagnostico" replace />;
+  }
+  return children;
+}
 
+function CatchAll () {
+  return <Navigate to={isTokenValid() ? '/' : '/login'} replace />;
+}
+
+function LessonRedirect() {
+  const { id } = useParams();
+  return <Navigate to={`/lecciones/${id}/tema`} replace />;
+}
+
+export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         {/* Rutas públicas: login y registro */}
         <Route element={<AuthLayout />}>
-          <Route path="/login" element={<Login onLogin={() => setIsAuthenticated(true)} />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Route>
 
@@ -35,7 +50,7 @@ export default function App() {
         <Route
           path="/diagnostico"
           element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <ProtectedRoute>
               <ExamenDiagnostico />
             </ProtectedRoute>
           }
@@ -45,8 +60,10 @@ export default function App() {
         <Route
           path="/"
           element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <MainLayout />
+            <ProtectedRoute>
+              <RequireDiagnostic>
+                <MainLayout />
+              </RequireDiagnostic>
             </ProtectedRoute>
           }
         >
@@ -54,14 +71,12 @@ export default function App() {
           <Route path="avances" element={<MisAvances />} />
           <Route path="lecciones" element={<ExplorarLecciones />} />
           <Route path="lecciones/:id/tema" element={<LeccionTema />} />
+          <Route path="lecciones/:id" element={<LessonRedirect />} />
           <Route path="lecciones/:id/ejercicio" element={<LeccionEjercicio />} />
           <Route path="perfil" element={<MiPerfil />} />
         </Route>
 
-        <Route
-          path="*"
-          element={<Navigate to={isAuthenticated ? '/' : '/login'} replace />}
-        />
+        <Route path="*" element={<CatchAll />} />
       </Routes>
     </BrowserRouter>
   );

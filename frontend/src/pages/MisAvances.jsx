@@ -1,52 +1,8 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { fetchProgressSummary } from '../utils/progress';
 
-const stats = [
-  {
-    label: 'Lecciones completadas',
-    value: '24',
-    delta: '+6 este mes',
-    icon: 'book',
-  },
-  {
-    label: 'Tiempo de aprendizaje',
-    value: '18 h',
-    delta: '+2 h esta semana',
-    icon: 'clock',
-  },
-  {
-    label: 'Tema con más cursos completados',
-    value: 'JavaScript',
-    delta: '+4 h esta semana',
-    icon: 'trend',
-  },
-];
 
-const currentLesson = {
-  topic: 'JAVASCRIPT',
-  position: '04 / 12',
-  title: 'Funciones: tu código, reutilizable',
-  course: 'Fundamentos de JavaScript',
-  duration: '15 min',
-  progress: 60,
-  to: '/lecciones',
-};
-
-// Minutos de estudio por día
-const weekly = [
-  { day: 'Lun', minutes: 20 },
-  { day: 'Mar', minutes: 30 },
-  { day: 'Mié', minutes: 10 },
-  { day: 'Jue', minutes: 25 },
-  { day: 'Vie', minutes: 20 },
-  { day: 'Sáb', minutes: 30 },
-  { day: 'Dom', minutes: 25 },
-];
-const TODAY_INDEX = 6; // Dom resaltado
-const CHART_MAX = 30; // minutos (eje Y)
-
-/* ------------------------------------------------------------------ */
-/* Iconos                              */
-/* ------------------------------------------------------------------ */
 const iconProps = {
   width: 20,
   height: 20,
@@ -89,15 +45,52 @@ function Icon({ name }) {
           <path d="M13 6l6 6-6 6" />
         </svg>
       );
-    case 'chevron':
-      return (
-        <svg {...iconProps} width={12} height={12}>
-          <path d="M6 9l6 6 6-6" />
-        </svg>
-      );
     default:
       return null;
   }
+}
+
+
+function formatDuration(totalMinutes) {
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h} h`;
+  return `${h} h ${m} min`;
+}
+
+const pad = (n) => String(n).padStart(2, '0');
+
+function buildStats(s) {
+  return [
+    {
+      label: 'Lecciones completadas',
+      value: String(s.completedLessons),
+      delta: `de ${s.totalLessons}`,
+      icon: 'book',
+    },
+    {
+      label: 'Tiempo de aprendizaje',
+      value: formatDuration(s.completedMinutes),
+      delta: 'en lecciones completadas',
+      icon: 'clock',
+    },
+    {
+      label: 'Promedio de aciertos',
+      value: s.averageScorePercent == null ? '—' : `${s.averageScorePercent}%`,
+      delta: 'en tus cuestionarios',
+      icon: 'trend',
+    },
+  ];
+}
+
+function buildMessage(s) {
+  if (s.totalLessons === 0) return 'Aún no hay lecciones disponibles.';
+  if (s.completedLessons === s.totalLessons) return '¡Completaste todas las lecciones!';
+  if (s.completedLessons === 0 && s.inProgressLessons === 0) {
+    return 'Empieza tu primera lección cuando quieras.';
+  }
+  return `Llevas ${s.completedLessons} de ${s.totalLessons} lecciones completadas. ¡Sigue así!`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -120,7 +113,44 @@ function StatCard({ label, value, delta, icon }) {
   );
 }
 
-function ContinueCard({ lesson }) {
+function CodePreview() {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute right-6 top-1/2 hidden -translate-y-1/2 lg:block"
+    >
+      <div className="w-56 rotate-[4deg] rounded-xl bg-white p-4 font-mono text-[11px] leading-relaxed text-purple-800 shadow-lg">
+        <div className="mb-2 flex gap-1">
+          <span className="h-1.5 w-1.5 rounded-full bg-purple-700" />
+          <span className="h-1.5 w-1.5 rounded-full bg-purple-300" />
+          <span className="h-1.5 w-1.5 rounded-full bg-purple-100" />
+        </div>
+        <p>function main() {'{'}</p>
+        <p className="pl-3">console.log(“Hello World”);</p>
+        <p className="pl-3 pt-2">return 0;</p>
+        <p>{'}'}</p>
+      </div>
+      <span className="absolute -bottom-5 left-0 -rotate-3 rounded-md bg-emerald-100 px-2 py-1 font-mono text-[10px] text-emerald-700">
+        ✓ Una lección más
+      </span>
+    </div>
+  );
+}
+
+// Última lección con la que trabajó el usuario (viene del backend)
+function ContinueCard({ lesson, totalLessons }) {
+  const completed = lesson.statusProgress === 'COMPLETADO';
+
+  let detail;
+  if (completed) {
+    detail = 'Lección completada';
+  } else if (lesson.triesProgress === 0) {
+    detail = 'Cuestionario pendiente';
+  } else {
+    const best = Math.round(lesson.gradeProgress ?? 0);
+    detail = `Mejor nota: ${best}/${lesson.totalQuestions}`;
+  }
+
   return (
     <section
       aria-labelledby="retoma-titulo"
@@ -129,67 +159,58 @@ function ContinueCard({ lesson }) {
       <div className="relative z-10 max-w-xl">
         <div className="flex items-center gap-2 text-xs">
           <span className="rounded-md bg-white px-2 py-1 font-medium text-purple-700">
-            En curso
+            {completed ? 'Completada' : 'En curso'}
           </span>
           <span className="font-mono text-purple-900">
-            {lesson.topic} · {lesson.position}
+            {(lesson.difficultyLesson ?? '').toUpperCase()} · {pad(lesson.position)} / {pad(totalLessons)}
           </span>
         </div>
 
         <h3 id="retoma-titulo" className="mt-4 text-2xl font-bold text-gray-900">
-          {lesson.title}
+          {lesson.titleLesson}
         </h3>
         <p className="mt-2 text-sm text-gray-600">
-          {lesson.course} · {lesson.duration}
+          {lesson.lengthLesson ? `${lesson.lengthLesson} min` : 'Duración no definida'}
         </p>
 
         <div className="mt-4 flex items-center gap-4">
           <Link
-            to={lesson.to}
+            to={`/lecciones/${lesson.idLesson}/tema`}
             className="inline-flex items-center gap-2 rounded-lg bg-purple-700 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-purple-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-900 focus-visible:ring-offset-2"
           >
-            Continuar lección <Icon name="arrow" />
+            {completed ? 'Repasar lección' : 'Continuar lección'} <Icon name="arrow" />
           </Link>
-          <span className="text-xs text-purple-900">
-            {lesson.progress}% completado
-          </span>
+          <span className="text-xs text-purple-900">{detail}</span>
         </div>
       </div>
 
-    
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute right-6 top-1/2 hidden -translate-y-1/2 lg:block"
-      >
-        <div className="w-56 rotate-[4deg] rounded-xl bg-white p-4 font-mono text-[11px] leading-relaxed text-purple-800 shadow-lg">
-          <div className="mb-2 flex gap-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-purple-700" />
-            <span className="h-1.5 w-1.5 rounded-full bg-purple-300" />
-            <span className="h-1.5 w-1.5 rounded-full bg-purple-100" />
-          </div>
-          <p>function main() {'{'}</p>
-          <p className="pl-3">console.log(“Hello World”);</p>
-          <p className="pl-3 pt-2">return 0;</p>
-          <p>{'}'}</p>
-        </div>
-        <span className="absolute -bottom-5 left-0 -rotate-3 rounded-md bg-emerald-100 px-2 py-1 font-mono text-[10px] text-emerald-700">
-          ✓ Una lección más
-        </span>
-      </div>
+      <CodePreview />
     </section>
   );
 }
 
-function formatDuration(totalMinutes) {
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
-  if (h === 0) return `${m} min`;
-  if (m === 0) return `${h} h`;
-  return `${h} h ${m} min`;
+// Cuando el usuario todavía no ha abierto ninguna lección
+function EmptyContinueCard() {
+  return (
+    <section className="rounded-3xl bg-[#DDBFFB] px-6 py-8">
+      <h3 className="text-2xl font-bold text-gray-900">Aún no empiezas ninguna lección</h3>
+      <p className="mt-2 text-sm text-gray-600">
+        Cuando abras una lección, aparecerá aquí para que la retomes en un clic.
+      </p>
+      <Link
+        to="/lecciones"
+        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-purple-700 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-purple-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-900 focus-visible:ring-offset-2"
+      >
+        Explorar lecciones <Icon name="arrow" />
+      </Link>
+    </section>
+  );
 }
 
-function WeeklyChart({ data, activeIndex, max }) {
+function WeeklyChart({ data, activeIndex }) {
   const total = data.reduce((sum, d) => sum + d.minutes, 0);
+  const peak = Math.max(0, ...data.map((d) => d.minutes));
+  const max = Math.max(30, Math.ceil(peak / 10) * 10);
   const ticks = [max, max / 2, 0];
 
   return (
@@ -201,20 +222,13 @@ function WeeklyChart({ data, activeIndex, max }) {
         <h3 id="ritmo-titulo" className="text-lg font-medium text-gray-900">
           Tu ritmo de aprendizaje
         </h3>
-        <button
-          type="button"
-          className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-purple-700"
-        >
-          Esta semana <Icon name="chevron" />
-        </button>
+        <span className="text-xs text-gray-500">Esta semana</span>
       </div>
 
       <p className="mt-4 flex items-baseline gap-3">
-        <span className="text-2xl font-bold text-gray-900">
-          {formatDuration(total)}
-        </span>
-        <span className="text-xs font-medium text-emerald-600">
-          ↗ 24% más que la semana pasada
+        <span className="text-2xl font-bold text-gray-900">{formatDuration(total)}</span>
+        <span className="text-xs text-gray-500">
+          estimado según la duración de las lecciones que trabajaste
         </span>
       </p>
 
@@ -239,9 +253,7 @@ function WeeklyChart({ data, activeIndex, max }) {
                     aria-label={`${d.day}: ${d.minutes} minutos`}
                     style={{ height: `${height}%` }}
                     className={`w-full rounded-sm transition-colors ${
-                      isActive
-                        ? 'bg-[#3B0764]'
-                        : 'bg-purple-100 hover:bg-purple-200'
+                      isActive ? 'bg-[#3B0764]' : 'bg-purple-100 hover:bg-purple-200'
                     }`}
                   />
                 </div>
@@ -259,15 +271,42 @@ function WeeklyChart({ data, activeIndex, max }) {
 /* Vista principal                                                     */
 /* ------------------------------------------------------------------ */
 export function MisAvances() {
+  const [summary, setSummary] = useState(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    fetchProgressSummary()
+      .then((data) => {
+        if (active) setSummary(data);
+      })
+      .catch((err) => {
+        if (active) setError(err.message);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (error) {
+    return (
+      <p role="alert" className="mx-auto max-w-6xl text-sm text-red-600">
+        {error}
+      </p>
+    );
+  }
+
+  if (!summary) {
+    return <p className="mx-auto max-w-6xl text-sm text-gray-500">Cargando tu progreso…</p>;
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-10">
       {/* Encabezado */}
       <header className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Feedback Title</h1>
-          <p className="mt-2 text-sm text-gray-700">
-            Feedback body. (un msj cortito)
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">Hola, {summary.userName}</h1>
+          <p className="mt-2 text-sm text-gray-700">{buildMessage(summary)}</p>
         </div>
         <Link
           to="/lecciones"
@@ -279,7 +318,7 @@ export function MisAvances() {
 
       {/* Métricas */}
       <section aria-label="Resumen" className="grid gap-4 md:grid-cols-3">
-        {stats.map((s) => (
+        {buildStats(summary).map((s) => (
           <StatCard key={s.label} {...s} />
         ))}
       </section>
@@ -287,11 +326,15 @@ export function MisAvances() {
       {/* Retoma donde lo dejaste */}
       <section className="space-y-4">
         <h2 className="text-lg text-gray-800">Retoma donde lo dejaste</h2>
-        <ContinueCard lesson={currentLesson} />
+        {summary.lastLesson ? (
+          <ContinueCard lesson={summary.lastLesson} totalLessons={summary.totalLessons} />
+        ) : (
+          <EmptyContinueCard />
+        )}
       </section>
 
       {/* Ritmo semanal */}
-      <WeeklyChart data={weekly} activeIndex={TODAY_INDEX} max={CHART_MAX} />
+      <WeeklyChart data={summary.weekly} activeIndex={summary.todayIndex} />
     </div>
   );
 }

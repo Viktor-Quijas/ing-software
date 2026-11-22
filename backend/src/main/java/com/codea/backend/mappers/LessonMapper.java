@@ -1,15 +1,15 @@
 package com.codea.backend.mappers;
 
-import com.codea.backend.dtos.LessonDto;
+import com.codea.backend.dtos.LessonDTO;
 import com.codea.backend.entitys.*;
 import org.springframework.stereotype.Component;
 
 @Component
 public class LessonMapper {
 
-    public LessonDto toDto(Lesson e) {
+    public LessonDTO toDto(Lesson e) {
         if (e == null) return null;
-        return LessonDto.builder()
+        return LessonDTO.builder()
                 .idLesson(e.getIdLesson())
                 .titleLesson(e.getTitleLesson())
                 .authorLesson(e.getAuthorLesson())
@@ -20,7 +20,7 @@ public class LessonMapper {
                 .build();
     }
 
-    public Lesson toEntity(LessonDto d) {
+    public Lesson toEntity(LessonDTO d) {
         if (d == null) return null;
         Lesson e = new Lesson();
         e.setIdLesson(d.getIdLesson());
@@ -29,7 +29,7 @@ public class LessonMapper {
     }
 
     /** Copia los campos del DTO (sin tocar el id). Las llaves foráneas se enlazan por id. */
-    public void updateEntity(Lesson e, LessonDto d) {
+    public void updateEntity(Lesson e, LessonDTO d) {
         e.setTitleLesson(d.getTitleLesson());
         e.setAuthorLesson(d.getAuthorLesson());
         e.setContentLesson(d.getContentLesson());

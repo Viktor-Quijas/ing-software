@@ -1,7 +1,7 @@
-package com.codea.backend.services;
+package com.codea.backend;
 
 import com.codea.backend.dtos.AuthResponseDto;
-import com.codea.backend.dtos.LessonDto;
+import com.codea.backend.dtos.LessonDTO;
 import com.codea.backend.dtos.LoginRequestDto;
 import com.codea.backend.dtos.UserRequestDto;
 import com.codea.backend.dtos.UserResponseDto;
@@ -22,6 +22,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import com.codea.backend.services.AuthService;
+import com.codea.backend.services.JwtService;
+import com.codea.backend.services.LessonService;
+import com.codea.backend.services.UserService;
 
 import java.util.Optional;
 
@@ -193,17 +197,17 @@ class ServicesUnitTest {
 
         @Test
         void create_ignoraElIdEnviadoYGuarda() {
-            LessonDto dto = LessonDto.builder().idLesson(99L).titleLesson("Fracciones").build();
+            LessonDTO dto = LessonDTO.builder().idLesson(99L).titleLesson("Fracciones").build();
             Lesson entity = new Lesson();
             entity.setIdLesson(99L);
             entity.setTitleLesson("Fracciones");
-            LessonDto esperado = LessonDto.builder().idLesson(1L).titleLesson("Fracciones").build();
+            LessonDTO esperado = LessonDTO.builder().idLesson(1L).titleLesson("Fracciones").build();
 
             when(mapper.toEntity(dto)).thenReturn(entity);
             when(repository.saveAndFlush(any(Lesson.class))).thenAnswer(inv -> inv.getArgument(0));
             when(mapper.toDto(any(Lesson.class))).thenReturn(esperado);
 
-            LessonDto result = service.create(dto);
+            LessonDTO result = service.create(dto);
 
             ArgumentCaptor<Lesson> captor = ArgumentCaptor.forClass(Lesson.class);
             verify(repository).saveAndFlush(captor.capture());
