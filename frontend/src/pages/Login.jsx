@@ -34,10 +34,14 @@ export function Login() {
       }
 
       const data = await response.json();
-      if (!data.token){
-        throw new Error('La respuesta del servidor no contiene un token.');
+      if (!data.token || !data.user?.idUser) {
+        throw new Error('La respuesta del servidor no contiene el token o el identificador del usuario.');
       }
 
+      sessionStorage.setItem('token', data.token);
+      sessionStorage.setItem('userId', String(data.user.idUser));
+      onLogin();
+      navigate('/diagnostico');
       setToken(data.token);
       navigate('/avances');
     } catch (err) {
@@ -85,9 +89,10 @@ export function Login() {
 
           <button
             type="submit"
+            disabled={isSubmitting}
             className="w-full py-2.5 bg-[#DDD6FE] hover:bg-[#C4B5FD] text-gray-800 font-semibold text-sm rounded-lg transition cursor-pointer"
           >
-            Iniciar Sesión
+            {isSubmitting ? 'Iniciando sesión...' : 'Iniciar Sesión'}
           </button>
         </form>
 

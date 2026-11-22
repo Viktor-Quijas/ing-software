@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { apiRequest } from '../utils/api';
 import { fetchProgressSummary } from '../utils/progress';
 
 // status.type: 'progress' | 'completed' | 'free'
@@ -94,6 +95,34 @@ const tones = {
   slate: { bg: 'bg-[#E8EAF6]', text: 'text-[#5B5F9E]', bar: 'bg-[#D0D3EC]' },
 };
 
+function mapLesson(lesson, index) {
+  const content = lesson.contentLesson?.trim() || 'Abre la lección para consultar su contenido.';
+  const description =
+    content.length > 150 ? `${content.slice(0, 150).trimEnd()}…` : content;
+  const toneNames = Object.keys(tones);
+
+  return {
+    id: lesson.idLesson,
+    tag: `LECCIÓN ${index + 1}`,
+    level: lesson.difficultyLesson || 'Sin nivel',
+    title: lesson.titleLesson,
+    description,
+    duration: lesson.lengthLesson,
+    badge: `#${index + 1}`,
+    preview: lesson.statusLesson || 'Disponible',
+    tone: toneNames[index % toneNames.length],
+  };
+}
+
+function isDiagnosticLesson(lesson) {
+  const normalize = (value = '') =>
+    value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+  return (
+    normalize(lesson.titleLesson) === 'examen diagnostico' ||
+    normalize(lesson.difficultyLesson) === 'diagnostico'
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* Iconos (SVG inline, sin dependencias)                               */
 /* ------------------------------------------------------------------ */
@@ -153,84 +182,14 @@ function Icon({ name, size = 14 }) {
 /* ------------------------------------------------------------------ */
 /* Subcomponentes                                                      */
 /* ------------------------------------------------------------------ */
-function LastLessonBanner({ data }) {
-  return (
-    <section
-      aria-label="Última lección"
-      className="flex flex-wrap items-center justify-between gap-6 rounded-3xl bg-[#38004F] px-8 py-9 text-white"
-    >
-      <div>
-        <p className="font-mono text-[11px] text-purple-200">
-          Continúa donde lo dejaste
-        </p>
-        <h2 className="mt-2 text-3xl font-medium">{data.title}</h2>
-        <p className="mt-3 text-sm text-purple-100">{data.description}</p>
-      </div>
-
-      <div className="flex items-center gap-8">
-        <p className="max-w-[170px] text-center font-mono text-[11px] leading-snug text-purple-200">
-          {data.progressNote}
-        </p>
-        <div className="flex flex-col items-center gap-3">
-          <Link
-            to={`/lecciones/${data.lessonId ?? 1}`}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#9B10D8] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#AA25E6] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#38004F]"
-          >
-            Continuar <Icon name="arrow" size={16} />
-          </Link>
-          <span className="text-[11px] text-purple-200">{data.progress}</span>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CardFooter({ lessonId, status, tone }) {
+function CardFooter({ lessonId, tone }) {
   const t = tones[tone];
   const linkClass = `inline-flex items-center gap-1 text-sm font-semibold ${t.text} hover:underline`;
 
-  if (status.type === 'progress') {
-    const pct = Math.round((status.done / status.total) * 100);
-    return (
-      <>
-        <div className="flex items-center gap-3">
-          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-gray-200">
-            <div
-              className="h-full rounded-full bg-[#5B45D6]"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-          <span className="text-xs text-gray-500">
-            {status.done} de {status.total}
-          </span>
-        </div>
-        <Link to={`/lecciones/${lessonId}`} className={linkClass}>
-          Continuar <Icon name="arrow" />
-        </Link>
-      </>
-    );
-  }
-
-  if (status.type === 'completed') {
-    return (
-      <>
-        <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2.5 py-1.5 text-xs font-medium text-emerald-700">
-          <Icon name="check" size={12} /> Completado
-        </span>
-        <Link to={`/lecciones/${lessonId}`} className={linkClass}>
-          Repasar <Icon name="arrow" />
-        </Link>
-      </>
-    );
-  }
-
   return (
-    <>
-      <span className="text-xs text-emerald-700">Acceso gratuito</span>
-      <Link to={`/lecciones/${lessonId}`} className={linkClass}>
-        Empezar <Icon name="arrow" />
-      </Link>
-    </>
+    <Link to={`/lecciones/${lessonId}/tema`} className={linkClass}>
+      Abrir lección <Icon name="arrow" />
+    </Link>
   );
 }
 
@@ -276,15 +235,17 @@ function LessonCard({ lesson }) {
 
         <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
           <span className="inline-flex items-center gap-1">
-            <Icon name="book" /> {lesson.lessons} lecciones
+            <Icon name="book" /> Contenido
           </span>
-          <span className="inline-flex items-center gap-1">
-            <Icon name="clock" /> {lesson.time}
-          </span>
+          {lesson.duration != null && (
+            <span className="inline-flex items-center gap-1">
+              <Icon name="clock" /> {lesson.duration} min
+            </span>
+          )}
         </div>
 
         <div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-3">
-          <CardFooter lessonId={lesson.id} status={lesson.status} tone={lesson.tone} />
+          <CardFooter lessonId={lesson.id} tone={lesson.tone} />
         </div>
       </div>
     </article>
@@ -346,27 +307,45 @@ export function ExplorarLecciones() {
         ¿Qué quieres aprender hoy?
       </h1>
 
+      {isLoading && (
+        <p role="status" className="rounded-2xl bg-white p-6 text-sm text-gray-600">
+          Cargando lecciones...
+        </p>
+      )}
       {/* Solo aparece si el usuario ya abrió alguna lección */}
       {banner && <LastLessonBanner data={banner} />}
 
-      {/* Las primeras 3 lecciones van como recomendadas */}
-      <LessonSection
-        title="Recomendados"
-        items={lessons.slice(0, RECOMMENDED_COUNT)}
-      />
+      {!isLoading && error && (
+        <section className="rounded-2xl border border-red-100 bg-white p-6">
+          <p role="alert" className="text-sm text-red-600">{error}</p>
+          <button
+            type="button"
+            onClick={() => setReload((value) => value + 1)}
+            className="mt-4 rounded-lg bg-purple-700 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-800"
+          >
+            Reintentar
+          </button>
+        </section>
+      )}
 
-      {/* El resto de los cursos */}
-      <LessonSection
-        title="Todos los cursos"
-        items={lessons.slice(RECOMMENDED_COUNT)}
-      />
+      {!isLoading && !error && lessons.length === 0 && (
+        <p className="rounded-2xl bg-white p-6 text-sm text-gray-600">
+          Aún no hay lecciones disponibles.
+        </p>
+      )}
 
-      <p className="flex items-center justify-center gap-2 pt-2 text-xs text-gray-500">
-        <span className="text-[#5B45D6]">
-          <Icon name="sparkle" />
-        </span>
-        Vamos carajo si se puede
-      </p>
+      {!isLoading && !error && lessons.length > 0 && (
+        <>
+          <LessonSection
+            title="Recomendados"
+            items={lessons.slice(0, RECOMMENDED_COUNT)}
+          />
+          <LessonSection
+            title="Todas las lecciones"
+            items={lessons.slice(RECOMMENDED_COUNT)}
+          />
+        </>
+      )}
     </div>
   );
 }

@@ -51,6 +51,142 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         seedStyles();
         seedLessons();
+        seedDiagnosticExam();
+    }
+
+    // ------------------------------------------------------------------
+    // Examen Diagnóstico
+    // ------------------------------------------------------------------
+    private void seedDiagnosticExam() {
+        String title = "Examen Diagnóstico";
+        Set<String> existing = lessonRepository.findAll().stream()
+                .map(l -> TextUtils.normalize(l.getTitleLesson()))
+                .collect(Collectors.toSet());
+
+        if (existing.contains(TextUtils.normalize(title))) {
+            return;
+        }
+
+        Lesson lesson = lessonRepository.save(Lesson.builder()
+                .titleLesson(title)
+                .authorLesson("Codea")
+                .contentLesson("""
+                        Este examen diagnóstico tiene dos objetivos: identificar tu estilo de aprendizaje predominante (visual, kinestésico o auditivo) y evaluar tus conocimientos base en Programación Orientada a Objetos y Estructuras de Datos.
+
+                        Puntos clave:
+                        - Responde con sinceridad las primeras 3 preguntas sobre cómo prefieres aprender.
+                        - Las siguientes 6 preguntas evalúan conceptos fundamentales de programación.
+                        - No te preocupes si no conoces alguna respuesta; esto nos ayudará a adaptar tu ruta.""")
+                .lengthLesson(15)
+                .difficultyLesson("Diagnóstico")
+                .statusLesson("ACTIVO")
+                .build());
+
+        Activity activity = activityRepository.save(Activity.builder()
+                .titleActivity("Cuestionario Diagnóstico: Perfil y Conocimientos Base")
+                .descriptionActivity("Evaluación inicial de estilo de aprendizaje y fundamentos de POO y Estructuras de Datos.")
+                .typeActivity("Diagnostico")
+                .instructionActivity("Selecciona la opción que mejor te describa o responda correctamente cada planteamiento.")
+                .lengthActivity(15)
+                .passingScore(0.0)
+                .lesson(lesson)
+                .build());
+
+        // Preguntas de estilo de aprendizaje + 1 pregunta por cada uno de los 6 temas
+        record DiagnosticQ(String topic, String difficulty, String text, int correct, List<String> options) {}
+
+        List<DiagnosticQ> questions = List.of(
+                // 1 - 3: Estilo de aprendizaje (tal cual las solicitaste)
+                new DiagnosticQ("Estilo de aprendizaje", "General", "¿Eres visual?", 0,
+                        List.of("Sí", "No", "No lo sé")),
+                new DiagnosticQ("Estilo de aprendizaje", "General", "¿Eres kinestésico?", 0,
+                        List.of("Sí", "No", "No lo sé")),
+                new DiagnosticQ("Estilo de aprendizaje", "General", "¿Eres auditivo?", 0,
+                        List.of("Sí", "No", "No lo sé")),
+
+                // 4: Estructura de datos - Arreglos y listas
+                new DiagnosticQ("Arreglos y listas", "Principiante",
+                        "¿Cuál es la principal diferencia entre un arreglo tradicional y una lista dinámica (como ArrayList) en Java?",
+                        1,
+                        List.of(
+                                "Los arreglos guardan distintos tipos de datos y las listas solo números",
+                                "El arreglo tiene un tamaño fijo definido al crearse, mientras que la lista dinámica puede crecer o reducirse automáticamente",
+                                "En una lista dinámica el primer elemento empieza en el índice 1 y en un arreglo en el 0"
+                        )),
+
+                // 5: Estructura de datos - Pilas y colas
+                new DiagnosticQ("Pilas y colas", "Intermedio",
+                        "Si insertas los elementos A, B y C (en ese orden) dentro de una pila (Stack) y luego realizas una operación de extracción (pop), ¿qué elemento sale primero?",
+                        2,
+                        List.of(
+                                "A, porque fue el primero en entrar (FIFO)",
+                                "B, porque quedó en el centro de la estructura",
+                                "C, porque fue el último en entrar (LIFO)"
+                        )),
+
+                // 6: Estructura de datos - Árboles binarios
+                new DiagnosticQ("Árboles binarios", "Avanzado",
+                        "En un Árbol Binario de Búsqueda (ABB), ¿qué regla se cumple para cualquier nodo respecto a sus hijos?",
+                        0,
+                        List.of(
+                                "Los valores menores van en el subárbol izquierdo y los mayores en el subárbol derecho",
+                                "Todos los nodos deben tener exactamente dos hijos llamados hojas",
+                                "El valor más pequeño del árbol siempre se almacena en el nodo raíz"
+                        )),
+
+                // 7: POO - Clases y objetos
+                new DiagnosticQ("Clases y objetos", "Principiante",
+                        "En Programación Orientada a Objetos, ¿qué relación existe entre una clase y un objeto?",
+                        1,
+                        List.of(
+                                "Son exactamente lo mismo, solo cambia el nombre según el lenguaje",
+                                "La clase es la plantilla o molde que define atributos y métodos, y el objeto es una instancia concreta creada a partir de ella",
+                                "El objeto es el archivo de código fuente y la clase es el resultado al compilar"
+                        )),
+
+                // 8: POO - Encapsulamiento y abstracción
+                new DiagnosticQ("Encapsulamiento y abstracción", "Intermedio",
+                        "¿Qué práctica aplica correctamente el principio de encapsulamiento en una clase?",
+                        0,
+                        List.of(
+                                "Declarar los atributos como private y controlar su lectura o modificación mediante métodos públicos",
+                                "Declarar todos los atributos como public para evitar escribir métodos adicionales",
+                                "Crear una subclase por cada atributo que tenga la clase principal"
+                        )),
+
+                // 9: POO - Herencia y polimorfismo
+                new DiagnosticQ("Herencia y polimorfismo", "Avanzado",
+                        "¿Cómo se manifiesta el polimorfismo cuando una clase hija sobrescribe un método de su clase padre?",
+                        2,
+                        List.of(
+                                "La clase hija pierde todos los atributos heredados de la clase padre",
+                                "Se impide que la clase padre pueda volver a ser instanciada",
+                                "Una referencia del tipo de la clase padre puede apuntar a un objeto hijo y ejecutar la versión sobrescrita del método"
+                        ))
+        );
+
+        int orderQuestion = 1;
+        for (DiagnosticQ dq : questions) {
+            ActivityQuestion question = questionRepository.save(ActivityQuestion.builder()
+                    .textQuestion(dq.text())
+                    .topicQuestion(dq.topic())
+                    .difficultyQuestion(dq.difficulty())
+                    .orderQuestion(orderQuestion++)
+                    .typeQuestion("OPCION_MULTIPLE")
+                    .activity(activity)
+                    .build());
+
+            List<ActivityOption> options = new ArrayList<>();
+            for (int i = 0; i < dq.options().size(); i++) {
+                options.add(ActivityOption.builder()
+                        .textOption(dq.options().get(i))
+                        .isCorrect(i == dq.correct())
+                        .orderOption(i + 1)
+                        .activityQuestion(question)
+                        .build());
+            }
+            optionRepository.saveAll(options);
+        }
     }
 
     private void seedStyles() {

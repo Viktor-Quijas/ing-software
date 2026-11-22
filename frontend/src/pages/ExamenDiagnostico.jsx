@@ -1,147 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logoCodea from '../assets/logotipo-codea.svg';
-import { saveDiagnosticResult, skipDiagnostic } from '../utils/diagnostic';
+import { apiRequest } from '../utils/api';
 
-/* ------------------------------------------------------------------ */
-/* Configuración y datos de ejemplo (luego vendrán de tu API)          */
-/* ------------------------------------------------------------------ */
-// Si es false, el usuario NO puede omitir el examen.
-const ALLOW_SKIP = false;
+function normalizeText(value = '') {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+}
 
-// Opción que se agrega a todas las preguntas para no obligar a adivinar
-const IDK = { id: 'idk', text: 'No lo sé todavía' };
-
-const questions = [
-  {
-    id: 'q1',
-    topic: 'Variables',
-    text: '¿Qué imprime este código?',
-    code: ['let edad = 20;', 'edad = edad + 1;', 'console.log(edad);'].join('\n'),
-    options: [
-      { id: 'a', text: '20' },
-      { id: 'b', text: '21' },
-      { id: 'c', text: 'edad' },
-      { id: 'd', text: 'Marca un error' },
-    ],
-    correct: 'b',
-  },
-  {
-    id: 'q2',
-    topic: 'Tipos de datos',
-    text: '¿Qué tipo de dato es "42" (con comillas)?',
-    options: [
-      { id: 'a', text: 'Número' },
-      { id: 'b', text: 'Texto (string)' },
-      { id: 'c', text: 'Booleano' },
-      { id: 'd', text: 'Lista (array)' },
-    ],
-    correct: 'b',
-  },
-  {
-    id: 'q3',
-    topic: 'Condicionales',
-    text: '¿Qué imprime este código?',
-    code: [
-      'const x = 12;',
-      '',
-      'if (x > 5 && x < 10) {',
-      '  console.log("A");',
-      '} else {',
-      '  console.log("B");',
-      '}',
-    ].join('\n'),
-    options: [
-      { id: 'a', text: 'A' },
-      { id: 'b', text: 'B' },
-      { id: 'c', text: 'A y luego B' },
-      { id: 'd', text: 'No imprime nada' },
-    ],
-    correct: 'b',
-  },
-  {
-    id: 'q4',
-    topic: 'Ciclos',
-    text: '¿Qué valores se imprimen?',
-    code: ['for (let i = 0; i < 3; i++) {', '  console.log(i);', '}'].join('\n'),
-    options: [
-      { id: 'a', text: '1, 2, 3' },
-      { id: 'b', text: '0, 1, 2' },
-      { id: 'c', text: '0, 1, 2, 3' },
-      { id: 'd', text: '3, 2, 1' },
-    ],
-    correct: 'b',
-  },
-  {
-    id: 'q5',
-    topic: 'Arreglos',
-    text: '¿Qué imprime este código?',
-    code: [
-      'const frutas = ["manzana", "pera", "uva"];',
-      'console.log(frutas[1]);',
-    ].join('\n'),
-    options: [
-      { id: 'a', text: 'manzana' },
-      { id: 'b', text: 'pera' },
-      { id: 'c', text: 'uva' },
-      { id: 'd', text: 'undefined' },
-    ],
-    correct: 'b',
-  },
-  {
-    id: 'q6',
-    topic: 'Funciones',
-    text: '¿Cuál es el resultado de llamar a la función?',
-    code: [
-      'function calcular(a, b) {',
-      '  return a * b + 1;',
-      '}',
-      '',
-      'console.log(calcular(2, 3));',
-    ].join('\n'),
-    options: [
-      { id: 'a', text: '6' },
-      { id: 'b', text: '7' },
-      { id: 'c', text: '8' },
-      { id: 'd', text: '23' },
-    ],
-    correct: 'b',
-  },
-  {
-    id: 'q7',
-    topic: 'Métodos de arreglos',
-    text: '¿Cuál es el valor de resultado?',
-    code: [
-      'const nums = [1, 2, 3, 4];',
-      'const resultado = nums',
-      '  .map((n) => n * 2)',
-      '  .filter((n) => n > 4);',
-    ].join('\n'),
-    options: [
-      { id: 'a', text: '[2, 4, 6, 8]' },
-      { id: 'b', text: '[6, 8]' },
-      { id: 'c', text: '[3, 4]' },
-      { id: 'd', text: '[]' },
-    ],
-    correct: 'b',
-  },
-  {
-    id: 'q8',
-    topic: 'Fundamentos de JavaScript',
-    text: '¿Qué imprime esta línea?',
-    code: 'console.log(0.1 + 0.2 === 0.3);',
-    options: [
-      { id: 'a', text: 'true' },
-      { id: 'b', text: 'false' },
-      { id: 'c', text: 'undefined' },
-      { id: 'd', text: 'Marca un error' },
-    ],
-    correct: 'b',
-  },
-];
-
-function getLevel(score) {
-  if (score >= 7) {
+function getLevel(score, total) {
+  const percentage = total > 0 ? score / total : 0;
+  if (percentage >= 0.75) {
     return {
       name: 'Avanzado',
       message:
@@ -149,7 +21,7 @@ function getLevel(score) {
       start: 'Te recomendamos empezar por las lecciones de nivel Intermedio y retos.',
     };
   }
-  if (score >= 4) {
+  if (percentage >= 0.4) {
     return {
       name: 'Intermedio',
       message:
@@ -192,21 +64,21 @@ function SecondaryButton({ children, ...props }) {
   );
 }
 
-function Intro({ onStart, onSkip }) {
+function Intro({ onStart, examName, questionCount }) {
   return (
     <section className="rounded-3xl border border-gray-200 bg-white p-8 md:p-10">
       <p className="font-mono text-[11px] text-purple-700">EXAMEN DIAGNÓSTICO</p>
       <h1 className="mt-3 text-3xl font-bold text-gray-900">
-        Te damos la bienvenida a Code&lt;/a&gt;
+        {examName}
       </h1>
       <p className="mt-4 text-sm leading-relaxed text-gray-600">
         Antes de empezar, haz este mini examen para conocer tu punto de partida y
-        recomendarte las lecciones ideales para ti. No tiene calificación y no
-        afecta tu avance: si no sabes una respuesta, elige “No lo sé todavía”.
+        recomendarte las lecciones ideales para ti. Tus respuestas se usarán para
+        calcular el resultado y personalizar tu experiencia.
       </p>
 
       <ul className="mt-6 flex flex-wrap gap-3 text-xs">
-        {[`${questions.length} preguntas`, '≈ 5 minutos', 'Sin calificación'].map(
+        {[`${questionCount} preguntas`, '≈ 5 minutos', 'Examen personalizado'].map(
           (chip) => (
             <li
               key={chip}
@@ -220,22 +92,23 @@ function Intro({ onStart, onSkip }) {
 
       <div className="mt-8 flex flex-wrap items-center gap-4">
         <PrimaryButton onClick={onStart}>Empezar examen →</PrimaryButton>
-        {ALLOW_SKIP && (
-          <button
-            type="button"
-            onClick={onSkip}
-            className="text-sm text-gray-500 hover:text-purple-700 hover:underline"
-          >
-            Omitir por ahora
-          </button>
-        )}
       </div>
     </section>
   );
 }
 
-function Question({ question, index, total, answer, onAnswer, onPrev, onNext }) {
-  const options = [...question.options, IDK];
+function Question({
+  question,
+  index,
+  total,
+  answer,
+  onAnswer,
+  onPrev,
+  onNext,
+  isSubmitting,
+  submitError,
+}) {
+  const options = question.options;
   const pct = Math.round(((index + 1) / total) * 100);
   const isLast = index === total - 1;
 
@@ -245,7 +118,7 @@ function Question({ question, index, total, answer, onAnswer, onPrev, onNext }) 
         <span className="font-mono text-purple-700">
           Pregunta {index + 1} de {total}
         </span>
-        <span>{question.topic}</span>
+        <span>{question.topic || question.difficulty || 'Diagnóstico'}</span>
       </div>
       <div
         className="mt-3 h-1.5 overflow-hidden rounded-full bg-purple-100"
@@ -264,12 +137,6 @@ function Question({ question, index, total, answer, onAnswer, onPrev, onNext }) 
       <fieldset className="mt-8">
         <legend className="text-xl text-gray-900">{question.text}</legend>
 
-        {question.code && (
-          <pre className="mt-5 overflow-x-auto rounded-xl bg-[#2A2745] p-5 font-mono text-[13px] leading-6 text-gray-200">
-            <code>{question.code}</code>
-          </pre>
-        )}
-
         <div className="mt-5 space-y-2">
           {options.map((o) => {
             const selected = answer === o.id;
@@ -284,7 +151,7 @@ function Question({ question, index, total, answer, onAnswer, onPrev, onNext }) 
               >
                 <input
                   type="radio"
-                  name={question.id}
+                  name={`question-${question.id}`}
                   value={o.id}
                   checked={selected}
                   onChange={() => onAnswer(o.id)}
@@ -305,26 +172,28 @@ function Question({ question, index, total, answer, onAnswer, onPrev, onNext }) 
         </div>
       </fieldset>
 
+      {submitError && (
+        <p role="alert" className="mt-4 text-sm text-red-600">
+          {submitError}
+        </p>
+      )}
+
       <div className="mt-8 flex items-center justify-between">
         <SecondaryButton onClick={onPrev} disabled={index === 0}>
           ← Anterior
         </SecondaryButton>
-        <PrimaryButton onClick={onNext} disabled={!answer}>
-          {isLast ? 'Ver resultado' : 'Siguiente →'}
+        <PrimaryButton onClick={onNext} disabled={!answer || isSubmitting}>
+          {isSubmitting ? 'Enviando...' : isLast ? 'Ver resultado' : 'Siguiente →'}
         </PrimaryButton>
       </div>
     </section>
   );
 }
 
-function Result({ answers, onFinish, onRetry }) {
-  const results = questions.map((q) => ({
-    ...q,
-    isCorrect: answers[q.id] === q.correct,
-  }));
-  const score = results.filter((r) => r.isCorrect).length;
-  const level = getLevel(score);
-  const toReview = results.filter((r) => !r.isCorrect);
+function Result({ result, onFinish, onRetry }) {
+  const score = Number(result.scoreAttempt || 0);
+  const total = Number(result.totalQuestions || 0);
+  const level = getLevel(score, total);
 
   return (
     <section className="rounded-3xl border border-gray-200 bg-white p-8 md:p-10">
@@ -336,36 +205,18 @@ function Result({ answers, onFinish, onRetry }) {
 
       <div className="mt-6 flex items-center gap-4 rounded-2xl bg-purple-50 p-5">
         <span className="text-4xl font-bold text-purple-700">
-          {score}/{questions.length}
+          {score}/{total}
         </span>
-        <span className="text-sm text-purple-900">respuestas correctas. {level.start}</span>
+        <span className="text-sm text-purple-900">
+          respuestas correctas. {level.start}
+        </span>
       </div>
 
-      <h2 className="mt-8 text-lg text-gray-900">Tus respuestas</h2>
-      <ul className="mt-3 divide-y divide-gray-100 rounded-xl border border-gray-200">
-        {results.map((r, i) => (
-          <li key={r.id} className="flex items-center justify-between px-4 py-3 text-sm">
-            <span className="text-gray-700">
-              {i + 1}. {r.topic}
-            </span>
-            <span
-              className={`rounded-md px-2.5 py-1 text-xs font-medium ${
-                r.isCorrect
-                  ? 'bg-emerald-50 text-emerald-700'
-                  : 'bg-amber-50 text-amber-700'
-              }`}
-            >
-              {r.isCorrect ? '✓ Correcta' : 'Por reforzar'}
-            </span>
-          </li>
-        ))}
-      </ul>
-
-      {toReview.length > 0 && (
-        <p className="mt-4 text-xs text-gray-500">
-          Temas a reforzar: {toReview.map((r) => r.topic).join(', ')}.
-        </p>
-      )}
+      <p className={`mt-5 text-sm font-semibold ${result.passed ? 'text-emerald-700' : 'text-amber-700'}`}>
+        {result.passed
+          ? 'Tu resultado quedó guardado.'
+          : 'Tu resultado quedó guardado; puedes continuar con tu ruta de aprendizaje.'}
+      </p>
 
       <div className="mt-8 flex flex-wrap items-center gap-4">
         <PrimaryButton onClick={onFinish}>Ir a mis avances →</PrimaryButton>
@@ -380,33 +231,151 @@ function Result({ answers, onFinish, onRetry }) {
 /* ------------------------------------------------------------------ */
 export function ExamenDiagnostico() {
   const navigate = useNavigate();
-  // -1 = introducción · 0..n-1 = preguntas · n = resultado
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [exam, setExam] = useState(null);
   const [step, setStep] = useState(-1);
   const [answers, setAnswers] = useState({});
+  const [result, setResult] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
-  const total = questions.length;
+  useEffect(() => {
+    let cancelled = false;
 
-  const score = () =>
-    questions.filter((q) => answers[q.id] === q.correct).length;
+    async function loadExam() {
+      setIsLoading(true);
+      setLoadError('');
 
-  const handleSkip = () => {
-    skipDiagnostic();
-    navigate('/avances', { replace: true });
-  };
+      try {
+        const token = sessionStorage.getItem('token');
+        const userId = Number(sessionStorage.getItem('userId'));
+        if (!token || !Number.isSafeInteger(userId) || userId <= 0) {
+          throw new Error('No se pudo identificar tu sesión. Inicia sesión nuevamente.');
+        }
 
-  // Guarda el resultado en cuanto el usuario ve su calificación
-  const handleShowResult = () => {
-    const finalScore = score();
-    saveDiagnosticResult({
-      score: finalScore,
-      total,
-      level: getLevel(finalScore).name,
-    });
-    setStep(total);
+        const lessons = await apiRequest('/api/lessons');
+        if (!Array.isArray(lessons)) {
+          throw new Error('El API devolvió una lista de lecciones inválida.');
+        }
+
+        const diagnosticLesson = lessons.find((item) =>
+          normalizeText(item.titleLesson) === 'examen diagnostico' ||
+          normalizeText(item.difficultyLesson) === 'diagnostico'
+        );
+        if (!diagnosticLesson) {
+          throw new Error('No se encontró la lección del examen diagnóstico en el API.');
+        }
+
+        const activity = await apiRequest(
+          `/api/activities/by-lesson/${diagnosticLesson.idLesson}`
+        );
+        if (!activity?.idActivity) {
+          throw new Error('La lección del examen diagnóstico no tiene una actividad configurada.');
+        }
+
+        const activityAttempts = await apiRequest(`/api/activity-attempts/by-user/${userId}`);
+        if (!Array.isArray(activityAttempts)) {
+          throw new Error('El API devolvió una lista de intentos inválida.');
+        }
+        if (activityAttempts.some((attempt) => Number(attempt.idActivity) === Number(activity.idActivity))) {
+          navigate('/avances', { replace: true });
+          return;
+        }
+
+        const detail = await apiRequest(`/api/activities/${activity.idActivity}/detail`);
+        if (!Array.isArray(detail?.questions) || detail.questions.length === 0) {
+          throw new Error('El examen diagnóstico no tiene preguntas configuradas.');
+        }
+
+        const questions = detail.questions.map((question) => ({
+          id: question.idActivityQuestion,
+          text: question.textQuestion,
+          topic: question.topicQuestion,
+          difficulty: question.difficultyQuestion,
+          options: Array.isArray(question.options)
+            ? question.options.map((option) => ({
+                id: option.idActivityOption,
+                text: option.textOption,
+              }))
+            : [],
+        }));
+        if (questions.some((question) => !question.id || question.options.length === 0)) {
+          throw new Error('El examen contiene preguntas sin opciones válidas.');
+        }
+
+        if (!cancelled) {
+          setExam({ ...detail, titleActivity: activity.titleActivity, questions });
+          setIsLoading(false);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setLoadError(
+            err instanceof Error ? err.message : 'No se pudo cargar el examen diagnóstico.'
+          );
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadExam();
+    return () => {
+      cancelled = true;
+    };
+  }, [loadAttempt, navigate]);
+
+  const total = exam?.questions.length || 0;
+
+  const handleShowResult = async () => {
+    if (!exam || isSubmitting) return;
+    setSubmitError('');
+
+    const userId = Number(sessionStorage.getItem('userId'));
+    const token = sessionStorage.getItem('token');
+    if (!token || !Number.isSafeInteger(userId) || userId <= 0) {
+      setSubmitError('No se pudo identificar tu sesión. Inicia sesión nuevamente.');
+      return;
+    }
+
+    if (exam.questions.some((question) => answers[question.id] == null)) {
+      setSubmitError('Responde todas las preguntas antes de enviar el examen.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const submittedResult = await apiRequest('/api/activity-attempts/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idUser: userId,
+          idActivity: exam.idActivity,
+          answers: exam.questions.map((question) => ({
+            idQuestion: question.id,
+            idOption: answers[question.id],
+          })),
+        }),
+      });
+
+      if (!submittedResult || submittedResult.idActivityAttempt == null) {
+        throw new Error('El API no confirmó el registro del intento diagnóstico.');
+      }
+      setResult(submittedResult);
+      setStep(total);
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : 'No se pudo guardar el intento diagnóstico.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleRetry = () => {
     setAnswers({});
+    setResult(null);
+    setSubmitError('');
     setStep(0);
   };
 
@@ -427,24 +396,61 @@ export function ExamenDiagnostico() {
       </header>
 
       <main className="mx-auto max-w-2xl px-6 py-10">
-        {step === -1 && <Intro onStart={() => setStep(0)} onSkip={handleSkip} />}
-
-        {step >= 0 && step < total && (
-          <Question
-            question={questions[step]}
-            index={step}
-            total={total}
-            answer={answers[questions[step].id]}
-            onAnswer={(optionId) =>
-              setAnswers((prev) => ({ ...prev, [questions[step].id]: optionId }))
-            }
-            onPrev={() => setStep((s) => s - 1)}
-            onNext={() => (step === total - 1 ? handleShowResult() : setStep((s) => s + 1))}
-          />
+        {isLoading && (
+          <p role="status" className="rounded-3xl bg-white p-8 text-gray-700">
+            Verificando tus intentos y cargando el examen...
+          </p>
         )}
 
-        {step === total && (
-          <Result answers={answers} onFinish={handleFinish} onRetry={handleRetry} />
+        {!isLoading && loadError && (
+          <section className="rounded-3xl border border-gray-200 bg-white p-8">
+            <p role="alert" className="text-sm text-red-600">{loadError}</p>
+            <PrimaryButton
+              onClick={() => setLoadAttempt((attempt) => attempt + 1)}
+              className="mt-5"
+            >
+              Reintentar
+            </PrimaryButton>
+          </section>
+        )}
+
+        {!isLoading && !loadError && exam && (
+          <>
+            {step === -1 && (
+              <Intro
+                onStart={() => setStep(0)}
+                examName={exam.titleActivity || 'Examen diagnóstico'}
+                questionCount={total}
+              />
+            )}
+
+            {step >= 0 && step < total && (
+              <Question
+                question={exam.questions[step]}
+                index={step}
+                total={total}
+                answer={answers[exam.questions[step].id]}
+                onAnswer={(optionId) =>
+                  setAnswers((previous) => ({
+                    ...previous,
+                    [exam.questions[step].id]: optionId,
+                  }))
+                }
+                onPrev={() => setStep((current) => current - 1)}
+                onNext={() =>
+                  step === total - 1
+                    ? handleShowResult()
+                    : setStep((current) => current + 1)
+                }
+                isSubmitting={isSubmitting}
+                submitError={submitError}
+              />
+            )}
+
+            {step === total && result && (
+              <Result result={result} onFinish={handleFinish} onRetry={handleRetry} />
+            )}
+          </>
         )}
       </main>
     </div>
