@@ -32,6 +32,12 @@ public class RecomendationController {
         return ResponseEntity.ok(service.findByUser(id));
     }
 
+    @PostMapping("/by-user/{id}/generate-from-diagnostic")
+    public ResponseEntity<List<RecomendationDTO>> generateFromLatestDiagnosticAttempt(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(service.generateFromLatestDiagnosticAttempt(id));
+    }
+
     @GetMapping("/by-algorithm/{id}")
     public ResponseEntity<List<RecomendationDTO>> findByAlgorithm(@PathVariable Long id) {
         return ResponseEntity.ok(service.findByAlgorithm(id));

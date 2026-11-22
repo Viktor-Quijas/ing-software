@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { TopicView } from '../components/lesson/TopicView';
 import { apiRequest } from '../utils/api';
 import { startLesson } from '../utils/progress';
@@ -304,6 +304,17 @@ function useLesson(id) {
   };
 }
 
+function usePublishLessonTitle(id, lesson) {
+  const { setLessonTitle } = useOutletContext();
+
+  useEffect(() => {
+    if (lesson && String(lesson.idLesson) === id) {
+      setLessonTitle(lesson.titleLesson);
+    }
+    return () => setLessonTitle('');
+  }, [id, lesson, setLessonTitle]);
+}
+
 function LessonState({ isLoading, error, onRetry }) {
   if (isLoading) {
     return <p role="status">Cargando lección...</p>;
@@ -342,14 +353,19 @@ function splitContent(content) {
 export function LeccionTema() {
   const { id = '1' } = useParams();
   const { lesson, isLoading, error, retry } = useLesson(id);
+  usePublishLessonTitle(id, lesson);
+
+  useEffect(() => {
+    if (!isLoading && !error && String(lesson?.idLesson) === id) {
+      startLesson(id);
+    }
+  }, [id, isLoading, error, lesson]);
+
   if (isLoading || error) {
     return <LessonState isLoading={isLoading} error={error} onRetry={retry} />;
   }
 
   const paragraphs = splitContent(lesson.contentLesson);
-    useEffect(() => {
-    startLesson(id);
-  }, [id]);
 
   return (
     <div className="space-y-6">
@@ -374,6 +390,7 @@ export function LeccionTema() {
 export function LeccionEjercicio() {
   const { id = '' } = useParams();
   const { lesson, isLoading: isLessonLoading, error: lessonError, retry } = useLesson(id);
+  usePublishLessonTitle(id, lesson);
   const [activity, setActivity] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');

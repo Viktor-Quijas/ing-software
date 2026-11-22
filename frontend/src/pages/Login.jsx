@@ -38,12 +38,9 @@ export function Login() {
         throw new Error('La respuesta del servidor no contiene el token o el identificador del usuario.');
       }
 
-      sessionStorage.setItem('token', data.token);
       sessionStorage.setItem('userId', String(data.user.idUser));
-      onLogin();
-      navigate('/diagnostico');
       setToken(data.token);
-      navigate('/avances');
+      navigate('/diagnostico');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se puedo iniciar sesión.');
     } finally {
