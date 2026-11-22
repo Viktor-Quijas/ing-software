@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
 import { AuthLayout } from './layouts/AuthLayout';
 import { Login } from './pages/Login';
@@ -27,8 +27,13 @@ function RequireDiagnostic({ children }) {
   return children;
 }
 
-function CatchAll() {
+function CatchAll () {
   return <Navigate to={isTokenValid() ? '/' : '/login'} replace />;
+}
+
+function LessonRedirect() {
+  const { id } = useParams();
+  return <Navigate to={`/lecciones/${id}/tema`} replace />;
 }
 
 export default function App() {
@@ -66,6 +71,7 @@ export default function App() {
           <Route path="avances" element={<MisAvances />} />
           <Route path="lecciones" element={<ExplorarLecciones />} />
           <Route path="lecciones/:id/tema" element={<LeccionTema />} />
+          <Route path="lecciones/:id" element={<LessonRedirect />} />
           <Route path="lecciones/:id/ejercicio" element={<LeccionEjercicio />} />
           <Route path="perfil" element={<MiPerfil />} />
         </Route>

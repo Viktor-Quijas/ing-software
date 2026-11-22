@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { startLesson } from '../utils/progress';
 
-/* ------------------------------------------------------------------ */
-/* Datos de ejemplo (luego los reemplazas con tu API / estado global)  */
-/* ------------------------------------------------------------------ */
 const lesson = {
   number: 'n',
   title: 'Titulo',
@@ -335,6 +333,9 @@ function ArrayDiagram() {
 
 export function LeccionTema() {
   const { id = '1' } = useParams();
+    useEffect(() => {
+    startLesson(id);
+  }, [id]);
 
   return (
     <div className="space-y-6">

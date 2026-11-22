@@ -1,14 +1,6 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-
-/* ------------------------------------------------------------------ */
-/* Datos de ejemplo (luego los reemplazas con tu API / estado global)  */
-/* ------------------------------------------------------------------ */
-const lastLesson = {
-  title: 'Última lección',
-  description: 'Aquí se mostrará la información de la última lección.',
-  progressNote: 'Aquí va a ir el porcentaje de avance del usuario',
-  progress: 'n% progresado',
-};
+import { fetchProgressSummary } from '../utils/progress';
 
 // status.type: 'progress' | 'completed' | 'free'
 const lessons = [
@@ -321,13 +313,41 @@ function LessonSection({ title, items }) {
 /* Vista principal                                                     */
 /* ------------------------------------------------------------------ */
 export function ExplorarLecciones() {
+  const [last, setLast] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    fetchProgressSummary()
+      .then((s) => {
+        if (active) setLast(s.lastLesson);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const banner = last && {
+    title: last.titleLesson,
+    description: `${last.difficultyLesson} · ${last.lengthLesson} min`,
+    progressNote:
+      last.statusProgress === 'COMPLETADO'
+        ? 'Lección completada'
+        : last.triesProgress === 0
+          ? 'Cuestionario pendiente'
+          : `Mejor nota: ${Math.round(last.gradeProgress ?? 0)}/${last.totalQuestions}`,
+    progress: last.statusProgress === 'COMPLETADO' ? 'Completada' : 'En curso',
+    lessonId: last.idLesson,
+  };
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-semibold text-gray-900">
         ¿Qué quieres aprender hoy?
       </h1>
 
-      <LastLessonBanner data={lastLesson} />
+      {/* Solo aparece si el usuario ya abrió alguna lección */}
+      {banner && <LastLessonBanner data={banner} />}
 
       {/* Las primeras 3 lecciones van como recomendadas */}
       <LessonSection
