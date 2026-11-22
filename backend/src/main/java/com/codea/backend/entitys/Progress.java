@@ -3,6 +3,7 @@ package com.codea.backend.entitys;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "progress", uniqueConstraints = @UniqueConstraint(columnNames = {"id_user", "id_activity"}))
@@ -24,6 +25,8 @@ public class Progress {
     private Integer triesProgress;
 
     private LocalDate dateProgress;
+
+    private LocalDateTime lastAccessProgress;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_user", nullable = false)

@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpHeaders;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -20,4 +21,13 @@ public class AuthController {
     public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody LoginRequestDto request) {
         return ResponseEntity.ok(service.login(request));
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+        @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String header) {
+    if (header != null && header.startsWith("Bearer ")) {
+        service.logout(header.substring(7));
+    }
+    return ResponseEntity.noContent().build();
+}
 }

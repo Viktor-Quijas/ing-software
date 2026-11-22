@@ -1,15 +1,15 @@
 package com.codea.backend.mappers;
 
-import com.codea.backend.dtos.RecomendationDto;
+import com.codea.backend.dtos.RecomendationDTO;
 import com.codea.backend.entitys.*;
 import org.springframework.stereotype.Component;
 
 @Component
 public class RecomendationMapper {
 
-    public RecomendationDto toDto(Recomendation e) {
+    public RecomendationDTO toDto(Recomendation e) {
         if (e == null) return null;
-        return RecomendationDto.builder()
+        return RecomendationDTO.builder()
                 .idRecomendation(e.getIdRecomendation())
                 .purposeRecomendation(e.getPurposeRecomendation())
                 .descriptionRecomendation(e.getDescriptionRecomendation())
@@ -22,7 +22,7 @@ public class RecomendationMapper {
                 .build();
     }
 
-    public Recomendation toEntity(RecomendationDto d) {
+    public Recomendation toEntity(RecomendationDTO d) {
         if (d == null) return null;
         Recomendation e = new Recomendation();
         e.setIdRecomendation(d.getIdRecomendation());
@@ -31,7 +31,7 @@ public class RecomendationMapper {
     }
 
     /** Copia los campos del DTO (sin tocar el id). Las llaves foráneas se enlazan por id. */
-    public void updateEntity(Recomendation e, RecomendationDto d) {
+    public void updateEntity(Recomendation e, RecomendationDTO d) {
         e.setPurposeRecomendation(d.getPurposeRecomendation());
         e.setDescriptionRecomendation(d.getDescriptionRecomendation());
         e.setDateRecomendation(d.getDateRecomendation());

@@ -23,22 +23,22 @@ public class AlgorithmService {
     private final AlgorithmMapper mapper;
 
     @Transactional(readOnly = true)
-    public List<AlgorithmDto> findAll() {
+    public List<AlgorithmDTO> findAll() {
         return repository.findAll().stream().map(mapper::toDto).toList();
     }
 
     @Transactional(readOnly = true)
-    public AlgorithmDto findById(Long id) {
+    public AlgorithmDTO findById(Long id) {
         return mapper.toDto(getEntity(id));
     }
 
-    public AlgorithmDto create(AlgorithmDto dto) {
+    public AlgorithmDTO create(AlgorithmDTO dto) {
         Algorithm entity = mapper.toEntity(dto);
         entity.setIdAlgorithm(null);
         return mapper.toDto(repository.saveAndFlush(entity));
     }
 
-    public AlgorithmDto update(Long id, AlgorithmDto dto) {
+    public AlgorithmDTO update(Long id, AlgorithmDTO dto) {
         Algorithm entity = getEntity(id);
         mapper.updateEntity(entity, dto);
         return mapper.toDto(repository.saveAndFlush(entity));

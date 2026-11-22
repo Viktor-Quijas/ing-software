@@ -18,22 +18,22 @@ public class AlgorithmController {
     private final AlgorithmService service;
 
     @GetMapping
-    public ResponseEntity<List<AlgorithmDto>> findAll() {
+    public ResponseEntity<List<AlgorithmDTO>> findAll() {
         return ResponseEntity.ok(service.findAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<AlgorithmDto> findById(@PathVariable Long id) {
+    public ResponseEntity<AlgorithmDTO> findById(@PathVariable Long id) {
         return ResponseEntity.ok(service.findById(id));
     }
 
     @PostMapping
-    public ResponseEntity<AlgorithmDto> create(@Valid @RequestBody AlgorithmDto dto) {
+    public ResponseEntity<AlgorithmDTO> create(@Valid @RequestBody AlgorithmDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(dto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<AlgorithmDto> update(@PathVariable Long id, @Valid @RequestBody AlgorithmDto dto) {
+    public ResponseEntity<AlgorithmDTO> update(@PathVariable Long id, @Valid @RequestBody AlgorithmDTO dto) {
         return ResponseEntity.ok(service.update(id, dto));
     }
 

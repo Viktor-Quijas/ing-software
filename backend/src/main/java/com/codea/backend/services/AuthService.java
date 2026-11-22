@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +21,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final UserMapper userMapper;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Transactional(readOnly = true)
     public AuthResponseDto login(LoginRequestDto request) {
@@ -34,4 +37,12 @@ public class AuthService {
                 .user(userMapper.toResponse(user))
                 .build();
     }
+
+    public void logout(String token) {
+    try {
+        Claims claims = jwtService.parseClaims(token);
+        tokenBlacklistService.revoke(claims.getId(), claims.getExpiration());
+    } catch (JwtException | IllegalArgumentException ex) {
+    }
+}
 }

@@ -8,7 +8,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RecomendationDto {
+public class RecomendationDTO {
 
     private Long idRecomendation;
 

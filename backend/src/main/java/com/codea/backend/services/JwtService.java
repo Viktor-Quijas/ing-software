@@ -1,6 +1,7 @@
 package com.codea.backend.services;
 
 import com.codea.backend.entitys.User;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.UUID;
 
 @Service
 public class JwtService {
@@ -17,7 +19,7 @@ public class JwtService {
     private final long expirationMs;
 
     public JwtService(@Value("${jwt.secret}") String secret,
-                      @Value("${jwt.expiration-ms}") long expirationMs) {
+                    @Value("${jwt.expiration-ms}") long expirationMs) {
         this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
         this.expirationMs = expirationMs;
     }
@@ -25,6 +27,7 @@ public class JwtService {
     public String generateToken(User user) {
         Date now = new Date();
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())
                 .subject(user.getEmailUser())
                 .claim("idUser", user.getIdUser())
                 .claim("rol", user.getRolUser())
@@ -34,12 +37,15 @@ public class JwtService {
                 .compact();
     }
 
-    /** Devuelve el correo del token; lanza JwtException si es inválido o expiró. */
-    public String extractEmail(String token) {
+    /** Valida la firma y la expiración; lanza JwtException si es inválido o expiró. */
+    public Claims parseClaims(String token) {
         return Jwts.parser().verifyWith(key).build()
                 .parseSignedClaims(token)
-                .getPayload()
-                .getSubject();
+                .getPayload();
+    }
+
+    public String extractEmail(String token) {
+        return parseClaims(token).getSubject();
     }
 
     public long getExpirationSeconds() {

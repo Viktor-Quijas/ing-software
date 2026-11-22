@@ -18,32 +18,32 @@ public class ProgressController {
     private final ProgressService service;
 
     @GetMapping
-    public ResponseEntity<List<ProgressDto>> findAll() {
+    public ResponseEntity<List<ProgressDTO>> findAll() {
         return ResponseEntity.ok(service.findAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProgressDto> findById(@PathVariable Long id) {
+    public ResponseEntity<ProgressDTO> findById(@PathVariable Long id) {
         return ResponseEntity.ok(service.findById(id));
     }
 
     @GetMapping("/by-user/{id}")
-    public ResponseEntity<List<ProgressDto>> findByUser(@PathVariable Long id) {
+    public ResponseEntity<List<ProgressDTO>> findByUser(@PathVariable Long id) {
         return ResponseEntity.ok(service.findByUser(id));
     }
 
     @GetMapping("/by-activity/{id}")
-    public ResponseEntity<List<ProgressDto>> findByActivity(@PathVariable Long id) {
+    public ResponseEntity<List<ProgressDTO>> findByActivity(@PathVariable Long id) {
         return ResponseEntity.ok(service.findByActivity(id));
     }
 
     @PostMapping
-    public ResponseEntity<ProgressDto> create(@Valid @RequestBody ProgressDto dto) {
+    public ResponseEntity<ProgressDTO> create(@Valid @RequestBody ProgressDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(dto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProgressDto> update(@PathVariable Long id, @Valid @RequestBody ProgressDto dto) {
+    public ResponseEntity<ProgressDTO> update(@PathVariable Long id, @Valid @RequestBody ProgressDTO dto) {
         return ResponseEntity.ok(service.update(id, dto));
     }
 
