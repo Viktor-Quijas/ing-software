@@ -12,6 +12,8 @@ public interface RecomendationRepository extends JpaRepository<Recomendation, Lo
 
     List<Recomendation> findByUser_IdUser(Long idUser);
 
+    List<Recomendation> findByUser_IdUserOrderByIdRecomendationDesc(Long idUser);
+
     List<Recomendation> findByAlgorithm_IdAlgorithm(Long idAlgorithm);
 
     List<Recomendation> findByLesson_IdLesson(Long idLesson);

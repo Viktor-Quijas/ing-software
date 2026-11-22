@@ -8,7 +8,6 @@ import { ExplorarLecciones } from './pages/ExplorarLecciones';
 import { LeccionTema, LeccionEjercicio } from './pages/Leccion';
 import { MiPerfil } from './pages/MiPerfil';
 import { ExamenDiagnostico } from './pages/ExamenDiagnostico';
-import { useState } from 'react';
 import { hasHandledDiagnostic } from './utils/diagnostic';
 import { isTokenValid, clearSession } from './utils/auth';
 

@@ -29,6 +29,7 @@ public class ActivityAttemptService {
     private final ActivityAttemptAnswerRepository answerRepository;
     private final ProgressRepository progressRepository;
     private final RecomendationRepository recomendationRepository;
+    private final RecomendationService recomendationService;
 
     @Transactional(readOnly = true)
     public List<ActivityAttemptDto> findAll() {
@@ -87,6 +88,7 @@ public class ActivityAttemptService {
 
         Set<Long> answered = new HashSet<>();
         List<ActivityAttemptAnswer> answers = new ArrayList<>();
+        List<ActivityQuestion> failedQuestions = new ArrayList<>();
         double score = 0;
 
         for (AnswerSubmissionDto a : request.getAnswers()) {
@@ -103,7 +105,11 @@ public class ActivityAttemptService {
                 throw new BadRequestException("La opción " + a.getIdOption() + " no pertenece a la pregunta " + a.getIdQuestion());
             }
             boolean correct = Boolean.TRUE.equals(option.getIsCorrect());
-            if (correct) score += 1;
+            if (correct) {
+                score += 1;
+            } else {
+                failedQuestions.add(question);
+            }
             answers.add(ActivityAttemptAnswer.builder()
                     .activityQuestion(question).activityOption(option).isCorrect(correct).build());
         }
@@ -141,6 +147,10 @@ public class ActivityAttemptService {
         if (passed) {
             recomendationRepository.deleteByUser_IdUserAndLesson_IdLesson(
                     user.getIdUser(), activity.getLesson().getIdLesson());
+        }
+
+        if (DiagnosticUtils.isDiagnosticActivity(activity)) {
+            recomendationService.generateFromFailedActivityQuestions(user, failedQuestions);
         }
 
         return ActivityResultDto.builder()

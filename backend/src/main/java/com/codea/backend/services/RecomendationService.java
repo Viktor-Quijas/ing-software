@@ -12,12 +12,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class RecomendationService {
+
+    private record FailedTopic(String topic, String difficulty) {}
 
     private final RecomendationRepository repository;
     private final RecomendationMapper mapper;
@@ -25,6 +26,8 @@ public class RecomendationService {
     private final ActivityRepository activityRepository;
     private final AlgorithmRepository algorithmRepository;
     private final ProgressRepository progressRepository;
+    private final ActivityAttemptRepository activityAttemptRepository;
+    private final ActivityAttemptAnswerRepository activityAttemptAnswerRepository;
 
     @Transactional(readOnly = true)
     public List<RecomendationDTO> findAll() {
@@ -38,7 +41,34 @@ public class RecomendationService {
 
     @Transactional(readOnly = true)
     public List<RecomendationDTO> findByUser(Long id) {
-        return repository.findByUser_IdUser(id).stream().map(mapper::toDto).toList();
+        return repository.findByUser_IdUserOrderByIdRecomendationDesc(id).stream()
+                .map(mapper::toDto)
+                .toList();
+    }
+
+    public List<RecomendationDTO> generateFromLatestDiagnosticAttempt(Long userId) {
+        List<Recomendation> existing = repository.findByUser_IdUserOrderByIdRecomendationDesc(userId);
+        if (!existing.isEmpty()) {
+            return existing.stream().map(mapper::toDto).toList();
+        }
+
+        ActivityAttempt latestAttempt = activityAttemptRepository.findByUser_IdUser(userId).stream()
+                .filter(attempt -> DiagnosticUtils.isDiagnosticActivity(attempt.getActivity()))
+                .max(Comparator.comparing(ActivityAttempt::getIdActivityAttempt))
+                .orElse(null);
+        if (latestAttempt == null) return List.of();
+
+        List<ActivityQuestion> failedQuestions = activityAttemptAnswerRepository
+                .findByActivityAttempt_IdActivityAttempt(latestAttempt.getIdActivityAttempt())
+                .stream()
+                .filter(answer -> !Boolean.TRUE.equals(answer.getIsCorrect()))
+                .map(ActivityAttemptAnswer::getActivityQuestion)
+                .toList();
+        generateFromFailedActivityQuestions(latestAttempt.getUser(), failedQuestions);
+
+        return repository.findByUser_IdUserOrderByIdRecomendationDesc(userId).stream()
+                .map(mapper::toDto)
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -88,14 +118,29 @@ public class RecomendationService {
      * y la dificultad es la misma (sin distinguir mayúsculas ni espacios).
      */
     public List<RecomendationDTO> generateFromFailedQuestions(User user, List<Question> failedQuestions) {
+        return generateFromFailedTopics(user, failedQuestions.stream()
+                .map(question -> new FailedTopic(
+                        question.getTopicQuestion(), question.getDifficultyQuestion()))
+                .toList());
+    }
+
+    public List<RecomendationDTO> generateFromFailedActivityQuestions(
+            User user, List<ActivityQuestion> failedQuestions) {
+        return generateFromFailedTopics(user, failedQuestions.stream()
+                .map(question -> new FailedTopic(
+                        question.getTopicQuestion(), question.getDifficultyQuestion()))
+                .toList());
+    }
+
+    private List<RecomendationDTO> generateFromFailedTopics(User user, List<FailedTopic> failedTopics) {
         Algorithm algorithm = algorithmRepository.findFirstByOrderByIdAlgorithmAsc().orElse(null);
         List<Lesson> lessons = lessonRepository.findAll();
         Set<Long> seenLessons = new HashSet<>();
         List<Recomendation> created = new ArrayList<>();
 
-        for (Question question : failedQuestions) {
-            String topic = TextUtils.normalize(question.getTopicQuestion());
-            String difficulty = TextUtils.normalize(question.getDifficultyQuestion());
+        for (FailedTopic failedTopic : failedTopics) {
+            String topic = TextUtils.normalize(failedTopic.topic());
+            String difficulty = TextUtils.normalize(failedTopic.difficulty());
             if (topic.isEmpty()) continue;
 
             for (Lesson lesson : lessons) {

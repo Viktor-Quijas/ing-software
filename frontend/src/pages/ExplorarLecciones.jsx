@@ -3,88 +3,6 @@ import { Link } from 'react-router-dom';
 import { apiRequest } from '../utils/api';
 import { fetchProgressSummary } from '../utils/progress';
 
-// status.type: 'progress' | 'completed' | 'free'
-const lessons = [
-  {
-    id: 1,
-    tag: 'JAVASCRIPT',
-    level: 'Principiante',
-    title: 'Lección 1',
-    description: 'Dale vida a tus ideas con la lógica de la web.',
-    lessons: 12,
-    time: '3 h',
-    badge: '#1',
-    preview: 'ejemplo1',
-    tone: 'violet',
-    status: { type: 'progress', done: 3, total: 12 },
-  },
-  {
-    id: 2,
-    tag: 'HTML Y CSS',
-    level: 'Principiante',
-    title: 'Lección 2',
-    description: 'De una hoja en blanco a tu primer sitio.',
-    lessons: 10,
-    time: '2 h 30 min',
-    badge: '#2',
-    preview: 'ejemplo2',
-    tone: 'green',
-    status: { type: 'completed' },
-  },
-  {
-    id: 3,
-    tag: 'PYTHON',
-    level: 'Principiante',
-    title: 'Lección 3',
-    description: 'Aprende a resolver problemas paso a paso.',
-    lessons: 16,
-    time: '4 h',
-    badge: '#3',
-    preview: 'ejemplo3',
-    tone: 'amber',
-    status: { type: 'free' },
-  },
-  {
-    id: 4,
-    tag: 'REACT',
-    level: 'Intermedio',
-    title: 'Lección 4',
-    description: 'Construye componentes que trabajan juntos.',
-    lessons: 14,
-    time: '4 h 20 min',
-    badge: '#4',
-    preview: 'ejemplo4',
-    tone: 'blue',
-    status: { type: 'free' },
-  },
-  {
-    id: 5,
-    tag: 'GIT Y GITHUB',
-    level: 'Principiante',
-    title: 'Lección 5',
-    description: 'Guarda, colabora y nunca pierdas una idea.',
-    lessons: 8,
-    time: '1 h 45 min',
-    badge: '#5',
-    preview: 'ejemplo5',
-    tone: 'peach',
-    status: { type: 'free' },
-  },
-  {
-    id: 6,
-    tag: 'SQL',
-    level: 'Intermedio',
-    title: 'Examen Diagnóstico',
-    description: 'Encuentra las respuestas en tus datos.',
-    lessons: 11,
-    time: '3 h 10 min',
-    badge: '!!',
-    preview: 'ejemplo6',
-    tone: 'slate',
-    status: { type: 'free' },
-  },
-];
-
 // Colores de la franja superior de cada tarjeta
 const tones = {
   violet: { bg: 'bg-[#EEEAFB]', text: 'text-[#5B45D6]', bar: 'bg-[#D9D2F6]' },
@@ -112,15 +30,6 @@ function mapLesson(lesson, index) {
     preview: lesson.statusLesson || 'Disponible',
     tone: toneNames[index % toneNames.length],
   };
-}
-
-function isDiagnosticLesson(lesson) {
-  const normalize = (value = '') =>
-    value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
-  return (
-    normalize(lesson.titleLesson) === 'examen diagnostico' ||
-    normalize(lesson.difficultyLesson) === 'diagnostico'
-  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -270,19 +179,134 @@ function LessonSection({ title, items }) {
   );
 }
 
+function LastLessonBanner({ data }) {
+  return (
+    <section className="flex flex-col gap-4 rounded-2xl bg-[#EEEAFB] p-6 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p className="text-sm font-semibold text-purple-700">
+          {data.progress} · {data.description}
+        </p>
+        <h2 className="mt-2 text-xl font-semibold text-gray-900">{data.title}</h2>
+        <p className="mt-1 text-sm text-gray-600">{data.progressNote}</p>
+      </div>
+      <Link
+        to={`/lecciones/${data.lessonId}/tema`}
+        className="inline-flex items-center gap-1 self-start text-sm font-semibold text-purple-700 hover:underline sm:self-auto"
+      >
+        Continuar lección <Icon name="arrow" />
+      </Link>
+    </section>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* Vista principal                                                     */
 /* ------------------------------------------------------------------ */
 export function ExplorarLecciones() {
+  const [lessons, setLessons] = useState([]);
+  const [recommendedLessonIds, setRecommendedLessonIds] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [reload, setReload] = useState(0);
+  const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(true);
+  const [recommendationError, setRecommendationError] = useState('');
+  const [recommendationReload, setRecommendationReload] = useState(0);
   const [last, setLast] = useState(null);
+  const [progressError, setProgressError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadLessons() {
+      setIsLoading(true);
+      setError('');
+
+      try {
+        const data = await apiRequest('/api/lessons');
+        if (!Array.isArray(data)) {
+          throw new Error('El API devolvió una lista de lecciones inválida.');
+        }
+
+        if (active) {
+          setLessons(data.map(mapLesson));
+        }
+      } catch (err) {
+        if (active) {
+          setError(err instanceof Error ? err.message : 'No se pudieron cargar las lecciones.');
+        }
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadLessons();
+    return () => {
+      active = false;
+    };
+  }, [reload]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadRecommendations() {
+      setIsLoadingRecommendations(true);
+      setRecommendationError('');
+
+      try {
+        const userId = Number(sessionStorage.getItem('userId'));
+        if (!Number.isSafeInteger(userId) || userId <= 0) {
+          throw new Error('No se pudo identificar tu sesión. Inicia sesión nuevamente.');
+        }
+
+        const data = await apiRequest(
+          `/api/recomendations/by-user/${userId}/generate-from-diagnostic`,
+          { method: 'POST' }
+        );
+        if (!Array.isArray(data)) {
+          throw new Error('El API devolvió una lista de recomendaciones inválida.');
+        }
+
+        const lessonIds = [...new Set(
+          data
+            .map((recommendation) => recommendation.idLesson)
+            .filter((id) => id != null)
+            .map(String)
+        )].slice(0, RECOMMENDED_COUNT);
+
+        if (active) setRecommendedLessonIds(lessonIds);
+      } catch (err) {
+        if (active) {
+          setRecommendationError(
+            err instanceof Error ? err.message : 'No se pudieron cargar las recomendaciones.'
+          );
+        }
+      } finally {
+        if (active) setIsLoadingRecommendations(false);
+      }
+    }
+
+    loadRecommendations();
+    return () => {
+      active = false;
+    };
+  }, [recommendationReload]);
 
   useEffect(() => {
     let active = true;
     fetchProgressSummary()
       .then((s) => {
-        if (active) setLast(s.lastLesson);
+        if (active) {
+          setLast(s.lastLesson);
+          setProgressError('');
+        }
       })
-      .catch(() => {});
+      .catch((err) => {
+        if (active) {
+          setProgressError(
+            err instanceof Error ? err.message : 'No se pudo cargar tu última lección.'
+          );
+        }
+      });
     return () => {
       active = false;
     };
@@ -290,7 +314,10 @@ export function ExplorarLecciones() {
 
   const banner = last && {
     title: last.titleLesson,
-    description: `${last.difficultyLesson} · ${last.lengthLesson} min`,
+    description: [
+      last.difficultyLesson,
+      last.lengthLesson != null ? `${last.lengthLesson} min` : null,
+    ].filter(Boolean).join(' · '),
     progressNote:
       last.statusProgress === 'COMPLETADO'
         ? 'Lección completada'
@@ -300,6 +327,9 @@ export function ExplorarLecciones() {
     progress: last.statusProgress === 'COMPLETADO' ? 'Completada' : 'En curso',
     lessonId: last.idLesson,
   };
+  const recommendedLessons = recommendedLessonIds
+    .map((id) => lessons.find((lesson) => String(lesson.id) === id))
+    .filter(Boolean);
 
   return (
     <div className="space-y-6">
@@ -314,6 +344,11 @@ export function ExplorarLecciones() {
       )}
       {/* Solo aparece si el usuario ya abrió alguna lección */}
       {banner && <LastLessonBanner data={banner} />}
+      {progressError && (
+        <p role="status" className="text-sm text-gray-600">
+          No se pudo cargar tu última lección: {progressError}
+        </p>
+      )}
 
       {!isLoading && error && (
         <section className="rounded-2xl border border-red-100 bg-white p-6">
@@ -334,17 +369,36 @@ export function ExplorarLecciones() {
         </p>
       )}
 
+      {!isLoadingRecommendations && recommendationError && (
+        <section className="rounded-2xl border border-red-100 bg-white p-6">
+          <p role="alert" className="text-sm text-red-600">{recommendationError}</p>
+          <button
+            type="button"
+            onClick={() => setRecommendationReload((value) => value + 1)}
+            className="mt-4 rounded-lg bg-purple-700 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-800"
+          >
+            Reintentar recomendaciones
+          </button>
+        </section>
+      )}
+
+      {!isLoadingRecommendations && !recommendationError && recommendedLessons.length === 0 && (
+        <section aria-label="Recomendados" className="rounded-2xl bg-white p-6 text-sm text-gray-600">
+          No hay recomendaciones disponibles por el momento.
+        </section>
+      )}
+
+      {isLoadingRecommendations && (
+        <p role="status" className="rounded-2xl bg-white p-6 text-sm text-gray-600">
+          Cargando recomendaciones...
+        </p>
+      )}
+
       {!isLoading && !error && lessons.length > 0 && (
-        <>
-          <LessonSection
-            title="Recomendados"
-            items={lessons.slice(0, RECOMMENDED_COUNT)}
-          />
-          <LessonSection
-            title="Todas las lecciones"
-            items={lessons.slice(RECOMMENDED_COUNT)}
-          />
-        </>
+        <LessonSection title="Recomendados" items={recommendedLessons} />
+      )}
+      {!isLoading && !error && (
+        <LessonSection title="Todas las lecciones" items={lessons} />
       )}
     </div>
   );
