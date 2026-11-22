@@ -1,31 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logoCodea from '../assets/logotipo-codea.svg';
+import { apiRequest } from '../utils/api';
 
-async function requestJson(path, token, options = {}) {
-  const response = await fetch(path, {
-    ...options,
-    headers: {
-      ...(options.headers || {}),
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  const body = await response.text();
-  let data = null;
-
-  if (body) {
-    try {
-      data = JSON.parse(body);
-    } catch {
-      throw new Error(`El servidor devolvió una respuesta no válida (${response.status}).`);
-    }
-  }
-
-  if (!response.ok) {
-    throw new Error(data?.message || `Error del servidor (${response.status}).`);
-  }
-
-  return data;
+function normalizeText(value = '') {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
 }
 
 function getLevel(score, total) {
@@ -211,9 +194,6 @@ function Result({ result, onFinish, onRetry }) {
   const score = Number(result.scoreAttempt || 0);
   const total = Number(result.totalQuestions || 0);
   const level = getLevel(score, total);
-  const recomendations = Array.isArray(result.recomendations)
-    ? result.recomendations
-    : [];
 
   return (
     <section className="rounded-3xl border border-gray-200 bg-white p-8 md:p-10">
@@ -232,32 +212,11 @@ function Result({ result, onFinish, onRetry }) {
         </span>
       </div>
 
-      {result.styleName && (
-        <p className="mt-5 text-sm text-gray-700">
-          Estilo de aprendizaje identificado: <strong>{result.styleName}</strong>
-        </p>
-      )}
-
-      {recomendations.length > 0 && (
-        <section className="mt-8">
-          <h2 className="text-lg text-gray-900">Recomendaciones</h2>
-          <ul className="mt-3 space-y-3">
-            {recomendations.map((recomendation) => (
-              <li
-                key={recomendation.idRecomendation}
-                className="rounded-xl border border-gray-200 p-4"
-              >
-                <h3 className="font-semibold text-gray-800">
-                  {recomendation.purposeRecomendation}
-                </h3>
-                <p className="mt-1 text-sm text-gray-600">
-                  {recomendation.descriptionRecomendation}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <p className={`mt-5 text-sm font-semibold ${result.passed ? 'text-emerald-700' : 'text-amber-700'}`}>
+        {result.passed
+          ? 'Tu resultado quedó guardado.'
+          : 'Tu resultado quedó guardado; puedes continuar con tu ruta de aprendizaje.'}
+      </p>
 
       <div className="mt-8 flex flex-wrap items-center gap-4">
         <PrimaryButton onClick={onFinish}>Ir a mis avances →</PrimaryButton>
@@ -296,51 +255,48 @@ export function ExamenDiagnostico() {
           throw new Error('No se pudo identificar tu sesión. Inicia sesión nuevamente.');
         }
 
-        const exams = await requestJson('/api/diagnostic-exams', token);
-        if (!Array.isArray(exams)) {
-          throw new Error('El API devolvió una lista de exámenes inválida.');
+        const lessons = await apiRequest('/api/lessons');
+        if (!Array.isArray(lessons)) {
+          throw new Error('El API devolvió una lista de lecciones inválida.');
         }
 
-        const activeExams = exams.filter((item) => {
-          const status = (item.statusExam || '').trim().toLowerCase();
-          return status === '' || status === 'activo' || status === 'active';
-        });
-        if (activeExams.length !== 1) {
-          throw new Error(
-            `Se esperaba exactamente un examen diagnóstico activo; se encontraron ${activeExams.length}.`
-          );
-        }
-
-        const selectedExam = activeExams[0];
-        const attempts = await requestJson(
-          `/api/diagnostic-attempts/by-user/${userId}`,
-          token
+        const diagnosticLesson = lessons.find((item) =>
+          normalizeText(item.titleLesson) === 'examen diagnostico' ||
+          normalizeText(item.difficultyLesson) === 'diagnostico'
         );
-        if (!Array.isArray(attempts)) {
+        if (!diagnosticLesson) {
+          throw new Error('No se encontró la lección del examen diagnóstico en el API.');
+        }
+
+        const activity = await apiRequest(
+          `/api/activities/by-lesson/${diagnosticLesson.idLesson}`
+        );
+        if (!activity?.idActivity) {
+          throw new Error('La lección del examen diagnóstico no tiene una actividad configurada.');
+        }
+
+        const activityAttempts = await apiRequest(`/api/activity-attempts/by-user/${userId}`);
+        if (!Array.isArray(activityAttempts)) {
           throw new Error('El API devolvió una lista de intentos inválida.');
         }
-
-        if (attempts.some((attempt) => Number(attempt.idExam) === Number(selectedExam.idExam))) {
+        if (activityAttempts.some((attempt) => Number(attempt.idActivity) === Number(activity.idActivity))) {
           navigate('/avances', { replace: true });
           return;
         }
 
-        const detail = await requestJson(
-          `/api/diagnostic-exams/${selectedExam.idExam}/detail`,
-          token
-        );
+        const detail = await apiRequest(`/api/activities/${activity.idActivity}/detail`);
         if (!Array.isArray(detail?.questions) || detail.questions.length === 0) {
           throw new Error('El examen diagnóstico no tiene preguntas configuradas.');
         }
 
         const questions = detail.questions.map((question) => ({
-          id: question.idQuestion,
+          id: question.idActivityQuestion,
           text: question.textQuestion,
           topic: question.topicQuestion,
           difficulty: question.difficultyQuestion,
           options: Array.isArray(question.options)
             ? question.options.map((option) => ({
-                id: option.idOption,
+                id: option.idActivityOption,
                 text: option.textOption,
               }))
             : [],
@@ -350,7 +306,7 @@ export function ExamenDiagnostico() {
         }
 
         if (!cancelled) {
-          setExam({ ...detail, questions });
+          setExam({ ...detail, titleActivity: activity.titleActivity, questions });
           setIsLoading(false);
         }
       } catch (err) {
@@ -389,12 +345,12 @@ export function ExamenDiagnostico() {
 
     setIsSubmitting(true);
     try {
-      const submittedResult = await requestJson('/api/diagnostic-attempts/submit', token, {
+      const submittedResult = await apiRequest('/api/activity-attempts/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           idUser: userId,
-          idExam: exam.idExam,
+          idActivity: exam.idActivity,
           answers: exam.questions.map((question) => ({
             idQuestion: question.id,
             idOption: answers[question.id],
@@ -402,7 +358,7 @@ export function ExamenDiagnostico() {
         }),
       });
 
-      if (!submittedResult || submittedResult.idAttempt == null) {
+      if (!submittedResult || submittedResult.idActivityAttempt == null) {
         throw new Error('El API no confirmó el registro del intento diagnóstico.');
       }
       setResult(submittedResult);
@@ -463,7 +419,7 @@ export function ExamenDiagnostico() {
             {step === -1 && (
               <Intro
                 onStart={() => setStep(0)}
-                examName={exam.nameExam || 'Examen diagnóstico'}
+                examName={exam.titleActivity || 'Examen diagnóstico'}
                 questionCount={total}
               />
             )}
