@@ -1,5 +1,6 @@
-import { Outlet, Link, useLocation, useParams } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import logoCodea from '../assets/logotipo-codea.svg';
+import { logoutRequest } from '../utils/auth';
 
 const ROUTE_LABELS = {
   '/': 'Mis avances',
@@ -10,11 +11,18 @@ const ROUTE_LABELS = {
 
 export function MainLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Función auxiliar para detectar el enlace activo
   const currentSection = ROUTE_LABELS[location.pathname] || 'Mis avances';
 
   const isActive = (path) => location.pathname === path;
+
+  // Cerrar sesión: borra los datos guardados y redirige al login
+  const handleLogout = async () => {
+  await logoutRequest(); 
+  navigate('/login', { replace: true });
+};
 
   return (
     <div className= "flex fixed inset-0 flex bg-codea-gray-100 overflow-hidden font-sans-screen bg-codea-gray-100 overflow-hidden font-sans">
@@ -76,7 +84,10 @@ export function MainLayout() {
 
         {/* Footer Sidebar */}
         <div className="space-y-4 px-2">
-          <button className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-500 font-medium transition-colors">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-500 font-medium transition-colors"
+          >
             <span className="border border-gray-400 rounded-full w-4 h-4 flex items-center justify-center text-[10px]">✕</span>
             Cerrar Sesión
           </button>

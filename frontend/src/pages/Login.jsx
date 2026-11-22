@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CodeaLogo } from '../components/CodeaLogo';
 import { LoginIllustrations } from '../components/LoginIllustrations';
+import { setToken } from '../utils/auth';
 
-export function Login({ onLogin }) {
+export function Login() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
@@ -41,6 +42,8 @@ export function Login({ onLogin }) {
       sessionStorage.setItem('userId', String(data.user.idUser));
       onLogin();
       navigate('/diagnostico');
+      setToken(data.token);
+      navigate('/avances');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se puedo iniciar sesión.');
     } finally {

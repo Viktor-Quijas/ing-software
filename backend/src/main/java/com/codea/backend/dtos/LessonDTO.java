@@ -7,7 +7,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class LessonDto {
+public class LessonDTO {
 
     private Long idLesson;
 

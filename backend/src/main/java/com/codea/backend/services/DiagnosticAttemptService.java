@@ -147,7 +147,7 @@ public class DiagnosticAttemptService {
         answers.forEach(a -> a.setAttempt(attempt));
         attemptAnswerRepository.saveAll(answers);
 
-        List<RecomendationDto> recomendations = recomendationService.generateFromFailedQuestions(user, failed);
+        List<RecomendationDTO> recomendations = recomendationService.generateFromFailedQuestions(user, failed);
 
         StyleLearning current = user.getStyleLearning();
         return DiagnosticResultDto.builder()

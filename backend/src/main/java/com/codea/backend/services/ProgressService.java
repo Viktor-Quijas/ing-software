@@ -23,32 +23,32 @@ public class ProgressService {
     private final ProgressMapper mapper;
 
     @Transactional(readOnly = true)
-    public List<ProgressDto> findAll() {
+    public List<ProgressDTO> findAll() {
         return repository.findAll().stream().map(mapper::toDto).toList();
     }
 
     @Transactional(readOnly = true)
-    public ProgressDto findById(Long id) {
+    public ProgressDTO findById(Long id) {
         return mapper.toDto(getEntity(id));
     }
 
     @Transactional(readOnly = true)
-    public List<ProgressDto> findByUser(Long id) {
+    public List<ProgressDTO> findByUser(Long id) {
         return repository.findByUser_IdUser(id).stream().map(mapper::toDto).toList();
     }
 
     @Transactional(readOnly = true)
-    public List<ProgressDto> findByActivity(Long id) {
+    public List<ProgressDTO> findByActivity(Long id) {
         return repository.findByActivity_IdActivity(id).stream().map(mapper::toDto).toList();
     }
 
-    public ProgressDto create(ProgressDto dto) {
+    public ProgressDTO create(ProgressDTO dto) {
         Progress entity = mapper.toEntity(dto);
         entity.setIdProgress(null);
         return mapper.toDto(repository.saveAndFlush(entity));
     }
 
-    public ProgressDto update(Long id, ProgressDto dto) {
+    public ProgressDTO update(Long id, ProgressDTO dto) {
         Progress entity = getEntity(id);
         mapper.updateEntity(entity, dto);
         return mapper.toDto(repository.saveAndFlush(entity));

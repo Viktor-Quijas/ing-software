@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -75,11 +76,6 @@ public class ActivityAttemptService {
                 .orElseThrow(() -> new ResourceNotFoundException("ActivityAttempt no encontrado: " + id));
     }
 
-    /**
-     * Califica el cuestionario de una actividad: +1 por cada respuesta correcta.
-     * Si score >= passingScore la actividad (y por tanto la lección) queda completada,
-     * se actualiza PROGRESS y se borra la recomendación de esa lección.
-     */
     public ActivityResultDto submit(ActivitySubmissionDto request) {
         User user = userRepository.findById(request.getIdUser())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + request.getIdUser()));
@@ -133,6 +129,7 @@ public class ActivityAttemptService {
         progress.setTriesProgress((progress.getTriesProgress() == null ? 0 : progress.getTriesProgress()) + 1);
         progress.setGradeProgress(Math.max(progress.getGradeProgress() == null ? 0.0 : progress.getGradeProgress(), score));
         progress.setDateProgress(LocalDate.now());
+        progress.setLastAccessProgress(LocalDateTime.now());
         if (passed) {
             progress.setStatusProgress("COMPLETADO");
         } else if (!"COMPLETADO".equalsIgnoreCase(progress.getStatusProgress())) {

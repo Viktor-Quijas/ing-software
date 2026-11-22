@@ -2,6 +2,77 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { TopicView } from '../components/lesson/TopicView';
 import { apiRequest } from '../utils/api';
+import { startLesson } from '../utils/progress';
+
+const lesson = {
+  number: 'n',
+  title: 'Titulo',
+  difficulty: 'Nivel de dificultad',
+  duration: 'Duración',
+  type: 'Tipo. ejem “Lectura + práctica”',
+};
+
+// --- Lección · Tema ---
+const theme = {
+  title: 'Tema',
+  paragraphs: [
+    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
+    'Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.',
+  ],
+  highlights: [
+    { label: 'Punto 1', text: 'Texto del primer punto a resaltar.' },
+    { label: 'Punto 2', text: 'Texto del segundo punto a resaltar.' },
+    { label: 'Punto 3', text: 'Texto del tercer punto a resaltar.' },
+  ],
+};
+
+// --- Lección · Ejercicio ---
+const exercise = {
+  title: 'Pregunta',
+  problemTitle: 'Planteamiento del problema',
+  problemDescription: 'Descripción de lo que se va a realizar a continuación.',
+  expected: 'Lo que se espera al terminar la lección (que sea generado con IA)',
+  exerciseTitle: 'Titulo del ejercicio',
+  instructions: 'Instrucciones',
+  codeLabel: 'Elemento gráfico de ayuda',
+  // Cada línea es una lista de [texto, tipo]
+  code: [
+    [['function', 'kw'], [' ', ''], ['saludar', 'fn'], ['(nombre) {', '']],
+    [['  ', ''], ['return', 'kw'], [' ', ''], ['`Hola, ${nombre}!`', 'str'], [';', '']],
+    [['}', '']],
+    [],
+    [['saludar', 'fn'], ['(', ''], ['"Andrea"', 'str'], [');', '']],
+  ],
+  question: '¿Cuál es la salida de la función anterior?',
+  options: [
+    { id: 'a', text: '“Hola, Andrea!”', correct: true },
+    { id: 'b', text: '“Hola, {Andrea}!”', correct: false },
+    { id: 'c', text: 'Ninguna de las anteriores.', correct: false },
+  ],
+  feedbackDefault:
+    'Aquí va a estar todo el feedback porque no hay tiempo para desarrollar ventanas modales.',
+  feedbackCorrect: '¡Correcto! La función devuelve el saludo con el nombre ya sustituido.',
+  feedbackWrong: 'Casi. Revisa cómo funcionan las plantillas de texto con `${...}` e inténtalo de nuevo.',
+};
+
+const progress = {
+  title: 'Título de la lección',
+  completed: 4,
+  total: 12,
+  section: '01 · Las bases del lenguaje',
+  topics: [
+    { title: 'Hola, JavaScript', min: 8, state: 'done' },
+    { title: 'Variables y tipos de datos', min: 12, state: 'done' },
+    { title: 'Operadores y condiciones', min: 15, state: 'done' },
+    { title: 'Arrays y sus métodos', min: 18, state: 'done' },
+    { title: 'Funciones', min: 15, state: 'current' },
+    { title: 'Objetos en JavaScript', min: 16, state: 'pending' },
+  ],
+  moreTopics: [
+    { title: 'Manejo de errores', min: 14, state: 'pending' },
+    { title: 'Módulos', min: 12, state: 'pending' },
+  ],
+};
 
 /* ------------------------------------------------------------------ */
 /* Iconos (SVG inline, sin dependencias)                               */
@@ -276,6 +347,9 @@ export function LeccionTema() {
   }
 
   const paragraphs = splitContent(lesson.contentLesson);
+    useEffect(() => {
+    startLesson(id);
+  }, [id]);
 
   return (
     <div className="space-y-6">

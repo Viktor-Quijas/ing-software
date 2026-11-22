@@ -27,42 +27,42 @@ public class RecomendationService {
     private final ProgressRepository progressRepository;
 
     @Transactional(readOnly = true)
-    public List<RecomendationDto> findAll() {
+    public List<RecomendationDTO> findAll() {
         return repository.findAll().stream().map(mapper::toDto).toList();
     }
 
     @Transactional(readOnly = true)
-    public RecomendationDto findById(Long id) {
+    public RecomendationDTO findById(Long id) {
         return mapper.toDto(getEntity(id));
     }
 
     @Transactional(readOnly = true)
-    public List<RecomendationDto> findByUser(Long id) {
+    public List<RecomendationDTO> findByUser(Long id) {
         return repository.findByUser_IdUser(id).stream().map(mapper::toDto).toList();
     }
 
     @Transactional(readOnly = true)
-    public List<RecomendationDto> findByAlgorithm(Long id) {
+    public List<RecomendationDTO> findByAlgorithm(Long id) {
         return repository.findByAlgorithm_IdAlgorithm(id).stream().map(mapper::toDto).toList();
     }
 
     @Transactional(readOnly = true)
-    public List<RecomendationDto> findByLesson(Long id) {
+    public List<RecomendationDTO> findByLesson(Long id) {
         return repository.findByLesson_IdLesson(id).stream().map(mapper::toDto).toList();
     }
 
     @Transactional(readOnly = true)
-    public List<RecomendationDto> findByActivity(Long id) {
+    public List<RecomendationDTO> findByActivity(Long id) {
         return repository.findByActivity_IdActivity(id).stream().map(mapper::toDto).toList();
     }
 
-    public RecomendationDto create(RecomendationDto dto) {
+    public RecomendationDTO create(RecomendationDTO dto) {
         Recomendation entity = mapper.toEntity(dto);
         entity.setIdRecomendation(null);
         return mapper.toDto(repository.saveAndFlush(entity));
     }
 
-    public RecomendationDto update(Long id, RecomendationDto dto) {
+    public RecomendationDTO update(Long id, RecomendationDTO dto) {
         Recomendation entity = getEntity(id);
         mapper.updateEntity(entity, dto);
         return mapper.toDto(repository.saveAndFlush(entity));
@@ -87,7 +87,7 @@ public class RecomendationService {
      * Se recomienda una lección solo si el tópico de la pregunta es igual al título de la lección
      * y la dificultad es la misma (sin distinguir mayúsculas ni espacios).
      */
-    public List<RecomendationDto> generateFromFailedQuestions(User user, List<Question> failedQuestions) {
+    public List<RecomendationDTO> generateFromFailedQuestions(User user, List<Question> failedQuestions) {
         Algorithm algorithm = algorithmRepository.findFirstByOrderByIdAlgorithmAsc().orElse(null);
         List<Lesson> lessons = lessonRepository.findAll();
         Set<Long> seenLessons = new HashSet<>();

@@ -7,7 +7,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class StyleLearningDto {
+public class StyleLearningDTO {
 
     private Long idStyle;
 

@@ -1,6 +1,89 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest } from '../utils/api';
+import { fetchProgressSummary } from '../utils/progress';
+
+// status.type: 'progress' | 'completed' | 'free'
+const lessons = [
+  {
+    id: 1,
+    tag: 'JAVASCRIPT',
+    level: 'Principiante',
+    title: 'Lección 1',
+    description: 'Dale vida a tus ideas con la lógica de la web.',
+    lessons: 12,
+    time: '3 h',
+    badge: '#1',
+    preview: 'ejemplo1',
+    tone: 'violet',
+    status: { type: 'progress', done: 3, total: 12 },
+  },
+  {
+    id: 2,
+    tag: 'HTML Y CSS',
+    level: 'Principiante',
+    title: 'Lección 2',
+    description: 'De una hoja en blanco a tu primer sitio.',
+    lessons: 10,
+    time: '2 h 30 min',
+    badge: '#2',
+    preview: 'ejemplo2',
+    tone: 'green',
+    status: { type: 'completed' },
+  },
+  {
+    id: 3,
+    tag: 'PYTHON',
+    level: 'Principiante',
+    title: 'Lección 3',
+    description: 'Aprende a resolver problemas paso a paso.',
+    lessons: 16,
+    time: '4 h',
+    badge: '#3',
+    preview: 'ejemplo3',
+    tone: 'amber',
+    status: { type: 'free' },
+  },
+  {
+    id: 4,
+    tag: 'REACT',
+    level: 'Intermedio',
+    title: 'Lección 4',
+    description: 'Construye componentes que trabajan juntos.',
+    lessons: 14,
+    time: '4 h 20 min',
+    badge: '#4',
+    preview: 'ejemplo4',
+    tone: 'blue',
+    status: { type: 'free' },
+  },
+  {
+    id: 5,
+    tag: 'GIT Y GITHUB',
+    level: 'Principiante',
+    title: 'Lección 5',
+    description: 'Guarda, colabora y nunca pierdas una idea.',
+    lessons: 8,
+    time: '1 h 45 min',
+    badge: '#5',
+    preview: 'ejemplo5',
+    tone: 'peach',
+    status: { type: 'free' },
+  },
+  {
+    id: 6,
+    tag: 'SQL',
+    level: 'Intermedio',
+    title: 'Examen Diagnóstico',
+    description: 'Encuentra las respuestas en tus datos.',
+    lessons: 11,
+    time: '3 h 10 min',
+    badge: '!!',
+    preview: 'ejemplo6',
+    tone: 'slate',
+    status: { type: 'free' },
+  },
+];
 
 // Colores de la franja superior de cada tarjeta
 const tones = {
@@ -191,41 +274,32 @@ function LessonSection({ title, items }) {
 /* Vista principal                                                     */
 /* ------------------------------------------------------------------ */
 export function ExplorarLecciones() {
-  const [lessons, setLessons] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [reload, setReload] = useState(0);
+  const [last, setLast] = useState(null);
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function loadLessons() {
-      setIsLoading(true);
-      setError('');
-
-      try {
-        const data = await apiRequest('/api/lessons');
-        if (!Array.isArray(data)) {
-          throw new Error('El API devolvió una lista de lecciones inválida.');
-        }
-
-        if (!cancelled) {
-          setLessons(data.filter((lesson) => !isDiagnosticLesson(lesson)).map(mapLesson));
-          setIsLoading(false);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'No se pudieron cargar las lecciones.');
-          setIsLoading(false);
-        }
-      }
-    }
-
-    loadLessons();
+    let active = true;
+    fetchProgressSummary()
+      .then((s) => {
+        if (active) setLast(s.lastLesson);
+      })
+      .catch(() => {});
     return () => {
-      cancelled = true;
+      active = false;
     };
-  }, [reload]);
+  }, []);
+
+  const banner = last && {
+    title: last.titleLesson,
+    description: `${last.difficultyLesson} · ${last.lengthLesson} min`,
+    progressNote:
+      last.statusProgress === 'COMPLETADO'
+        ? 'Lección completada'
+        : last.triesProgress === 0
+          ? 'Cuestionario pendiente'
+          : `Mejor nota: ${Math.round(last.gradeProgress ?? 0)}/${last.totalQuestions}`,
+    progress: last.statusProgress === 'COMPLETADO' ? 'Completada' : 'En curso',
+    lessonId: last.idLesson,
+  };
 
   return (
     <div className="space-y-6">
@@ -238,6 +312,8 @@ export function ExplorarLecciones() {
           Cargando lecciones...
         </p>
       )}
+      {/* Solo aparece si el usuario ya abrió alguna lección */}
+      {banner && <LastLessonBanner data={banner} />}
 
       {!isLoading && error && (
         <section className="rounded-2xl border border-red-100 bg-white p-6">

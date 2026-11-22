@@ -19,5 +19,5 @@ public class DiagnosticResultDto {
     private Integer totalQuestions;
     private Long idStyle;
     private String styleName;
-    private List<RecomendationDto> recomendations;
+    private List<RecomendationDTO> recomendations;
 }

@@ -1,15 +1,15 @@
 package com.codea.backend.mappers;
 
-import com.codea.backend.dtos.ProgressDto;
+import com.codea.backend.dtos.ProgressDTO;
 import com.codea.backend.entitys.*;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ProgressMapper {
 
-    public ProgressDto toDto(Progress e) {
+    public ProgressDTO toDto(Progress e) {
         if (e == null) return null;
-        return ProgressDto.builder()
+        return ProgressDTO.builder()
                 .idProgress(e.getIdProgress())
                 .statusProgress(e.getStatusProgress())
                 .gradeProgress(e.getGradeProgress())
@@ -20,7 +20,7 @@ public class ProgressMapper {
                 .build();
     }
 
-    public Progress toEntity(ProgressDto d) {
+    public Progress toEntity(ProgressDTO d) {
         if (d == null) return null;
         Progress e = new Progress();
         e.setIdProgress(d.getIdProgress());
@@ -29,7 +29,7 @@ public class ProgressMapper {
     }
 
     /** Copia los campos del DTO (sin tocar el id). Las llaves foráneas se enlazan por id. */
-    public void updateEntity(Progress e, ProgressDto d) {
+    public void updateEntity(Progress e, ProgressDTO d) {
         e.setStatusProgress(d.getStatusProgress());
         e.setGradeProgress(d.getGradeProgress());
         e.setTriesProgress(d.getTriesProgress());
