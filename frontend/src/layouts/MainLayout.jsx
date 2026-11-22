@@ -1,10 +1,19 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useParams } from 'react-router-dom';
 import logoCodea from '../assets/logotipo-codea.svg';
+
+const ROUTE_LABELS = {
+  '/': 'Mis avances',
+  '/avances': 'Mis avances',
+  '/lecciones': 'Explorar lecciones',
+  '/perfil': 'Mi perfil',
+}
 
 export function MainLayout() {
   const location = useLocation();
 
   // Función auxiliar para detectar el enlace activo
+  const currentSection = ROUTE_LABELS[location.pathname] || 'Mis avances';
+
   const isActive = (path) => location.pathname === path;
 
   return (
@@ -83,9 +92,11 @@ export function MainLayout() {
         <header className="h-16 px-8 bg-codea-primary-100 flex items-center justify-between border-b border-gray-100">
           {/* Migas de pan */}
           <nav className="text-sm text-gray-400 font-medium flex items-center gap-2">
-            <span>Mi espacio</span>
+            <Link to="/avances" className="hover:text-purple-700 transition-colors">
+              Mi espacio
+            </Link>
             <span>&gt;</span>
-            <span className="text-purple-700 font-bold">Mis avances</span>
+            <span className="text-purple-700 font-bold">{currentSection}</span>
           </nav>
 
           {/* Menú Usuario */}

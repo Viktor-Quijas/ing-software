@@ -8,7 +8,6 @@ import { ExplorarLecciones } from './pages/ExplorarLecciones';
 import { LeccionTema, LeccionEjercicio } from './pages/Leccion';
 import { MiPerfil } from './pages/MiPerfil';
 import { ExamenDiagnostico } from './pages/ExamenDiagnostico';
-import { hasHandledDiagnostic } from './utils/diagnostic';
 import { useState } from 'react';
 
 function ProtectedRoute({ isAuthenticated, children }) {
@@ -18,18 +17,9 @@ function ProtectedRoute({ isAuthenticated, children }) {
   return children;
 }
 
-// Si el usuario aún no hizo (ni omitió) el diagnóstico, lo mandamos primero ahí
-function RequireDiagnostic({ children }) {
-  if (!hasHandledDiagnostic()) {
-    return <Navigate to="/diagnostico" replace />;
-  }
-  return children;
-}
-
 export default function App() {
-  // Variable traída desde el backend? no se.
   const [isAuthenticated, setIsAuthenticated] = useState(
-    () => Boolean(sessionStorage.getItem('token'))
+    () => Boolean(sessionStorage.getItem('token') && sessionStorage.getItem('userId'))
   );
 
   return (
@@ -56,9 +46,7 @@ export default function App() {
           path="/"
           element={
             <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <RequireDiagnostic>
-                <MainLayout />
-              </RequireDiagnostic>
+              <MainLayout />
             </ProtectedRoute>
           }
         >

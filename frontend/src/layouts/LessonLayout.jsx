@@ -1,8 +1,19 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useParams } from 'react-router-dom';
 import logoCodea from '../assets/logotipo-codea.svg';
+
+const LESSONS_TITLES = {
+  '1': 'Lección 1 · JavaScript',
+  '2': 'Lección 2 · HTML y CSS',
+  '3': 'Lección 3 · Python',
+  '4': 'Lección 4 · React',
+  '5': 'Lección 5 · Git y GitHub',
+  '6': 'Examen Diagnóstico · SQL',
+};
 
 export function LessonLayout({ lessonTitle = '[Nombre de lección actual]' }) {
   const location = useLocation();
+  const { lessonId } = useParams(); // Lee el :lessonId de la URL (/lecciones/:lessonId)
+  const currentLessonTitle = LESSONS_TITLES[lessonId] || `Lección ${lessonId}`;
   const isActive = (path) => location.pathname.startsWith(path);
 
   return (
@@ -89,7 +100,9 @@ export function LessonLayout({ lessonTitle = '[Nombre de lección actual]' }) {
               Explorar lecciones
             </Link>
             <span>&gt;</span>
-            <span className="text-[#6D28D9] font-semibold truncate">{lessonTitle}</span>
+            <span className="text-[#6D28D9] font-semibold truncate">
+              {currentLessonTitle}
+            </span>
           </nav>
 
           <div className="flex items-center gap-2.5 pl-4 border-l border-purple-200/70">
