@@ -7,15 +7,17 @@ import registerRightImg from '../assets/register-2.svg';
 
 export function Register() {
     const navigate = useNavigate();
+    const [error, setError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
-        nombre: '',
-        apellido: '',
-        telefono: '',
+        nameUser: '',
+        lastnameUser: '',
         email: '',
         password: '',
         confirmPassword: '',
         aceptaTerminos: false,
     });
+    
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -25,18 +27,55 @@ export function Register() {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+
         if (formData.password !== formData.confirmPassword) {
-            alert('Las constraseñas no coinciden');
+            setError('Las contraseñas no coinciden.');
             return;
         }
+
         if (!formData.aceptaTerminos) {
-            alert('Debes aceptar los términos y condiciones');
+            setError('Debes aceptar los términos y condiciones.');
             return;
         }
-        console.log('Registrando usuario:', formData);
-        navigate('/login');
+
+        setIsSubmitting(true);
+
+        try {
+            const response = await fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nameUser: formData.nameUser,
+                lastnameUser: formData.lastnameUser,
+                emailUser: formData.email,
+                passwordUser: formData.password,
+            }),
+            });
+
+            const responseText = await response.text();
+            let data = null;
+
+            if (responseText) {
+                try {
+                    data = JSON.parse(responseText);
+                } catch {
+                    throw new Error(`El servidor devolvió una respuesta no válida (${response.status}).`);
+                }
+            }
+
+            if (!response.ok) {
+                throw new Error(data?.message || `Error del servidor (${response.status}).`);
+            }
+
+            navigate('/login');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'No se pudo completar el registro.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -61,28 +100,19 @@ export function Register() {
                 <form onSubmit={handleSubmit} className="w-full space-y-3.5">
                     <input
                         type="text"
-                        name="nombre"
+                        name="nameUser"
                         placeholder="Nombre"
                         required
-                        value={formData.nombre}
+                        value={formData.nameUser}
                         onChange={handleChange}
                         className="w-full px-4 py-2 bg-[#F4F0FB] border border-[#8B5CF6]/50 rounded-lg text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
                     />
                     <input
                         type="text"
-                        name="apellido"
+                        name="lastnameUser"
                         placeholder="Apellido"
                         required
-                        value={formData.apellido}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 bg-[#F4F0FB] border border-[#8B5CF6]/50 rounded-lg text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
-                    />
-                    <input
-                        type="tel"
-                        name="telefono"
-                        placeholder="Número de teléfono"
-                        required
-                        value={formData.telefono}
+                        value={formData.lastnameUser}
                         onChange={handleChange}
                         className="w-full px-4 py-2 bg-[#F4F0FB] border border-[#8B5CF6]/50 rounded-lg text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
                     />
@@ -127,6 +157,8 @@ export function Register() {
                             Aceptar los términos y condiciones
                         </span>
                     </label>
+
+                    {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 
                     <button
                         type="submit"

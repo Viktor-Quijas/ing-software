@@ -9,6 +9,7 @@ import { LeccionTema, LeccionEjercicio } from './pages/Leccion';
 import { MiPerfil } from './pages/MiPerfil';
 import { ExamenDiagnostico } from './pages/ExamenDiagnostico';
 import { hasHandledDiagnostic } from './utils/diagnostic';
+import { useState } from 'react';
 
 function ProtectedRoute({ isAuthenticated, children }) {
   if (!isAuthenticated) {
@@ -27,14 +28,16 @@ function RequireDiagnostic({ children }) {
 
 export default function App() {
   // Variable traída desde el backend? no se.
-  const isAuthenticated = true; // ← true para probar
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    () => Boolean(sessionStorage.getItem('token'))
+  );
 
   return (
     <BrowserRouter>
       <Routes>
         {/* Rutas públicas: login y registro */}
         <Route element={<AuthLayout />}>
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<Login onLogin={() => setIsAuthenticated(true)} />} />
           <Route path="/register" element={<Register />} />
         </Route>
 
