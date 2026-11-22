@@ -8,7 +8,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProgressDto {
+public class ProgressDTO {
 
     private Long idProgress;
 

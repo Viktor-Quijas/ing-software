@@ -25,22 +25,22 @@ public class ActivityService {
     private final ActivityOptionRepository optionRepository;
 
     @Transactional(readOnly = true)
-    public List<ActivityDto> findAll() {
+    public List<ActivityDTO> findAll() {
         return repository.findAll().stream().map(mapper::toDto).toList();
     }
 
     @Transactional(readOnly = true)
-    public ActivityDto findById(Long id) {
+    public ActivityDTO findById(Long id) {
         return mapper.toDto(getEntity(id));
     }
 
-    public ActivityDto create(ActivityDto dto) {
+    public ActivityDTO create(ActivityDTO dto) {
         Activity entity = mapper.toEntity(dto);
         entity.setIdActivity(null);
         return mapper.toDto(repository.saveAndFlush(entity));
     }
 
-    public ActivityDto update(Long id, ActivityDto dto) {
+    public ActivityDTO update(Long id, ActivityDTO dto) {
         Activity entity = getEntity(id);
         mapper.updateEntity(entity, dto);
         return mapper.toDto(repository.saveAndFlush(entity));
@@ -61,7 +61,7 @@ public class ActivityService {
     }
 
     @Transactional(readOnly = true)
-    public ActivityDto findByLesson(Long idLesson) {
+    public ActivityDTO findByLesson(Long idLesson) {
         return repository.findByLesson_IdLesson(idLesson)
                 .map(mapper::toDto)
                 .orElseThrow(() -> new ResourceNotFoundException("La lección " + idLesson + " no tiene actividad"));

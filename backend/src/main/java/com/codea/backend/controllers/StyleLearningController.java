@@ -18,22 +18,22 @@ public class StyleLearningController {
     private final StyleLearningService service;
 
     @GetMapping
-    public ResponseEntity<List<StyleLearningDto>> findAll() {
+    public ResponseEntity<List<StyleLearningDTO>> findAll() {
         return ResponseEntity.ok(service.findAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<StyleLearningDto> findById(@PathVariable Long id) {
+    public ResponseEntity<StyleLearningDTO> findById(@PathVariable Long id) {
         return ResponseEntity.ok(service.findById(id));
     }
 
     @PostMapping
-    public ResponseEntity<StyleLearningDto> create(@Valid @RequestBody StyleLearningDto dto) {
+    public ResponseEntity<StyleLearningDTO> create(@Valid @RequestBody StyleLearningDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(dto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<StyleLearningDto> update(@PathVariable Long id, @Valid @RequestBody StyleLearningDto dto) {
+    public ResponseEntity<StyleLearningDTO> update(@PathVariable Long id, @Valid @RequestBody StyleLearningDTO dto) {
         return ResponseEntity.ok(service.update(id, dto));
     }
 

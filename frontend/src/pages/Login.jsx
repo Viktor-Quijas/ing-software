@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CodeaLogo } from '../components/CodeaLogo';
 import { LoginIllustrations } from '../components/LoginIllustrations';
+import { setToken } from '../utils/auth';
 
-export function Login({ onLogin }) {
+export function Login() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
@@ -37,8 +38,7 @@ export function Login({ onLogin }) {
         throw new Error('La respuesta del servidor no contiene un token.');
       }
 
-      sessionStorage.setItem('token', data.token);
-      onLogin();
+      setToken(data.token);
       navigate('/avances');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se puedo iniciar sesión.');

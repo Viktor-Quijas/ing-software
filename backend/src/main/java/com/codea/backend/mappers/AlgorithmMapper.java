@@ -1,15 +1,15 @@
 package com.codea.backend.mappers;
 
-import com.codea.backend.dtos.AlgorithmDto;
+import com.codea.backend.dtos.AlgorithmDTO;
 import com.codea.backend.entitys.*;
 import org.springframework.stereotype.Component;
 
 @Component
 public class AlgorithmMapper {
 
-    public AlgorithmDto toDto(Algorithm e) {
+    public AlgorithmDTO toDto(Algorithm e) {
         if (e == null) return null;
-        return AlgorithmDto.builder()
+        return AlgorithmDTO.builder()
                 .idAlgorithm(e.getIdAlgorithm())
                 .nameAlgorithm(e.getNameAlgorithm())
                 .descriptionAlgorithm(e.getDescriptionAlgorithm())
@@ -18,7 +18,7 @@ public class AlgorithmMapper {
                 .build();
     }
 
-    public Algorithm toEntity(AlgorithmDto d) {
+    public Algorithm toEntity(AlgorithmDTO d) {
         if (d == null) return null;
         Algorithm e = new Algorithm();
         e.setIdAlgorithm(d.getIdAlgorithm());
@@ -27,7 +27,7 @@ public class AlgorithmMapper {
     }
 
     /** Copia los campos del DTO (sin tocar el id). Las llaves foráneas se enlazan por id. */
-    public void updateEntity(Algorithm e, AlgorithmDto d) {
+    public void updateEntity(Algorithm e, AlgorithmDTO d) {
         e.setNameAlgorithm(d.getNameAlgorithm());
         e.setDescriptionAlgorithm(d.getDescriptionAlgorithm());
         e.setVersionAlgorithm(d.getVersionAlgorithm());

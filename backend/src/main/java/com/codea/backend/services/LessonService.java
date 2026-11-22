@@ -23,22 +23,22 @@ public class LessonService {
     private final LessonMapper mapper;
 
     @Transactional(readOnly = true)
-    public List<LessonDto> findAll() {
+    public List<LessonDTO> findAll() {
         return repository.findAll().stream().map(mapper::toDto).toList();
     }
 
     @Transactional(readOnly = true)
-    public LessonDto findById(Long id) {
+    public LessonDTO findById(Long id) {
         return mapper.toDto(getEntity(id));
     }
 
-    public LessonDto create(LessonDto dto) {
+    public LessonDTO create(LessonDTO dto) {
         Lesson entity = mapper.toEntity(dto);
         entity.setIdLesson(null);
         return mapper.toDto(repository.saveAndFlush(entity));
     }
 
-    public LessonDto update(Long id, LessonDto dto) {
+    public LessonDTO update(Long id, LessonDTO dto) {
         Lesson entity = getEntity(id);
         mapper.updateEntity(entity, dto);
         return mapper.toDto(repository.saveAndFlush(entity));
