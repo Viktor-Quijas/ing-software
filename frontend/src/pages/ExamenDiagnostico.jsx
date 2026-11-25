@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logoCodea from '../assets/logotipo-codea.svg';
 import { apiRequest } from '../utils/api';
+import { markDiagnosticCompleted, saveDiagnosticResult } from '../utils/diagnostic';
 
 function normalizeText(value = '') {
   return value
@@ -280,6 +281,7 @@ export function ExamenDiagnostico() {
           throw new Error('El API devolvió una lista de intentos inválida.');
         }
         if (activityAttempts.some((attempt) => Number(attempt.idActivity) === Number(activity.idActivity))) {
+          markDiagnosticCompleted();
           navigate('/avances', { replace: true });
           return;
         }
@@ -361,6 +363,13 @@ export function ExamenDiagnostico() {
       if (!submittedResult || submittedResult.idActivityAttempt == null) {
         throw new Error('El API no confirmó el registro del intento diagnóstico.');
       }
+      const score = Number(submittedResult.scoreAttempt || 0);
+      const totalQuestions = Number(submittedResult.totalQuestions || 0);
+      saveDiagnosticResult({
+        score,
+        total: totalQuestions,
+        level: getLevel(score, totalQuestions).name,
+      });
       setResult(submittedResult);
       setStep(total);
     } catch (err) {

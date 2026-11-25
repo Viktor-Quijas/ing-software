@@ -19,21 +19,26 @@ export function hasHandledDiagnostic() {
   return getDiagnosticStatus() !== null;
 }
 
-export function saveDiagnosticResult({ score, total, level }) {
+function saveStatus(status) {
   try {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
-        skipped: false,
-        score,
-        total,
-        level,
+        ...status,
         completedAt: new Date().toISOString(),
       })
     );
   } catch {
     // Si el navegador bloquea el almacenamiento, seguimos sin guardar.
   }
+}
+
+export function saveDiagnosticResult({ score, total, level }) {
+  saveStatus({ skipped: false, score, total, level });
+}
+
+export function markDiagnosticCompleted() {
+  saveStatus({ skipped: false });
 }
 
 export function skipDiagnostic() {

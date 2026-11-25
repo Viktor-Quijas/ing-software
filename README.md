@@ -10,10 +10,12 @@ Para el forntend se encuentra node alpine 22 para react con vite.
 Al realizar pull al proyecto:
 
     1. crear un archivo llamado .env
-    2. copiar las variables de entorno de el archivo .env.template al archivo recientemente creado.
+    2. copiar las variables de entorno del archivo `.env.example` al archivo recientemente creado.
     3. al construir por primera vez el proyecto ejecutar el comando
     
             docker compose up --build (SOLO LA PRIMERA VEZ QUE SE VAYA A INICIAR)
+
+Los valores de ejemplo (incluida la contraseña `admin`) son solo para desarrollo local; reemplázalos antes de usar el proyecto en producción.
     
     Y listo.
 
